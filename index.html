@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Sixty Days to Confidence</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0b0b0b;color:#f0ede6;font-family:'DM Sans',sans-serif;font-weight:300;min-height:100vh;}
+  :root{--gold:#c9a84c;--border:rgba(201,168,76,0.15);--faint:rgba(201,168,76,0.08);--red:#c0392b;--mono:'DM Mono',monospace;--bebas:'Bebas Neue',sans-serif;}
+  .btn{background:none;border:1px solid var(--border);color:var(--gold);padding:6px 14px;font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;border-radius:2px;}
+  .btn:hover{background:var(--faint);border-color:var(--gold);}
+  .btn:disabled{opacity:0.25;cursor:default;}
+  .btn-gold{background:var(--gold);border:1px solid var(--gold);color:#0b0b0b;padding:12px 24px;font-family:var(--mono);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-weight:600;border-radius:2px;width:100%;margin-top:8px;}
+  .btn-gold:disabled{opacity:0.5;cursor:default;}
+  .cell{width:100%;border:none;border-radius:4px;cursor:pointer;transition:all 0.15s;font-family:var(--mono);}
+  .cell:disabled{opacity:0.25;cursor:default;}
+  input,textarea,select{background:#111;border:1px solid rgba(255,255,255,0.1);color:#f0ede6;padding:10px 12px;font-family:'DM Sans',sans-serif;font-size:14px;border-radius:4px;outline:none;width:100%;}
+  input:focus,textarea:focus,select:focus{border-color:var(--gold);}
+  textarea{resize:vertical;min-height:60px;}
+  .choice{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.07);border-radius:4px;cursor:pointer;margin-bottom:6px;transition:all 0.15s;}
+  .choice:hover{border-color:rgba(201,168,76,0.3);}
+  .choice.selected{background:var(--faint);border-color:var(--gold);}
+  .section-label{font-family:var(--mono);font-size:9px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:10px;margin-top:24px;}
+  .error{background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.4);padding:12px 16px;border-radius:4px;font-size:13px;color:#e05c5c;margin-bottom:16px;}
+  .success{background:rgba(74,140,97,0.15);border:1px solid rgba(74,140,97,0.4);padding:12px 16px;border-radius:4px;font-size:13px;color:#6dbf8a;margin-bottom:16px;}
+  .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(201,168,76,0.3);border-top-color:var(--gold);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .tab{padding:8px 16px;font-family:var(--mono);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;border:none;background:none;color:#666;border-bottom:2px solid transparent;transition:all 0.2s;}
+  .tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback } = React;
+
+// ── SUPABASE ──
+const SUPABASE_URL = "https://lgjisiaeshhrmkomlwca.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxnamlzaWFlc2hocm1rb21sd2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI1NjIxNDQsImV4cCI6MjA5ODEzODE0NH0.LlVN5VAupRsrGVsygZw5H4hMZ4A-AzmTmpfiLEiUL38";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── CONSTANTS ──
+const DAYS = ["SUN","MON","TUE","WED","THU","FRI","SAT"];
+const HABITS = [
+  {id:"diet",    label:"Diet",            icon:"🥗", color:"#4a8c61", bg:"rgba(74,140,97,0.15)"},
+  {id:"morning", label:"Morning",         icon:"🧠", color:"#7b6faa", bg:"rgba(123,111,170,0.15)"},
+  {id:"water",   label:"Water",           icon:"💧", color:"#4a7fa8", bg:"rgba(74,127,168,0.15)"},
+  {id:"money",   label:"Financial",       icon:"💰", color:"#c9a84c", bg:"rgba(201,168,76,0.15)"},
+];
+const DIET_OPTIONS = [
+  {id:"calories",  label:"Calorie Counting & Restriction",    detail:"Log every meal. Stay within your daily calorie target."},
+  {id:"eliminate", label:"Give Up the Foods Holding Me Back", detail:"Name the specific foods or drinks you are cutting for 60 days."},
+  {id:"add",       label:"Add a Daily Serving Commitment",    detail:"Commit to a specific number of servings of something healthy every day."},
+];
+const MORNING_MAIN = [
+  {id:"read",     label:"Read — Personal Development Book", detail:"20 minutes minimum every morning."},
+  {id:"journal",  label:"Journal Every Morning",            detail:"10 minutes minimum. Pen to paper before the day starts."},
+  {id:"meditate", label:"10–15 Min Meditation",             detail:"Guided or self-guided. Stillness before the noise."},
+];
+const MORNING_ADDON = [
+  {id:"affirmations", label:"Affirmations Out Loud",          detail:"At least 5 personal affirmations spoken with intention."},
+  {id:"visualize",    label:"5 Minutes of Visualization",     detail:"Eyes closed. Mentally rehearse your goal or future self."},
+  {id:"gratitude",    label:"Write a Gratitude Note to Someone", detail:"One real message to one person every day."},
+];
+const EXERCISE_OPTIONS = [
+  {id:"gym",    label:"Gym / Strength Training", detail:"4 days HIGH intensity · 3 days active recovery"},
+  {id:"run",    label:"Running / Cardio",         detail:"4 days HIGH intensity · 3 days active recovery"},
+  {id:"class",  label:"Workout Classes",          detail:"4 days HIGH intensity · 3 days active recovery"},
+  {id:"home",   label:"Home Workout Program",     detail:"4 days HIGH intensity · 3 days active recovery"},
+  {id:"mixed",  label:"Mixed / Combination",      detail:"4 days HIGH intensity · 3 days active recovery"},
+];
+const FINANCIAL_OPTIONS = [
+  {id:"debt",   label:"Debt Destroyer",  detail:"Pay down a defined debt. Set your target before Day 1."},
+  {id:"save",   label:"Savings Builder", detail:"Move a set amount into savings every week."},
+  {id:"income", label:"Income Grower",   detail:"Generate a defined amount of new income over 60 days."},
+];
+
+// ── HELPERS ──
+function dateKey(date){ return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
+function getWeekStart(offset=0){ const d=new Date(); d.setDate(d.getDate()-d.getDay()+offset*7); d.setHours(0,0,0,0); return d; }
+function weekDates(ws){ return Array.from({length:7},(_,i)=>{ const d=new Date(ws); d.setDate(d.getDate()+i); return d; }); }
+function fmt(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+
+function ChoiceCard({option, selected, onSelect, letter}){
+  return (
+    <div className={`choice${selected?" selected":""}`} onClick={onSelect}>
+      <div style={{fontFamily:"var(--bebas)",fontSize:18,color:"var(--gold)",lineHeight:1,flexShrink:0,width:18}}>{letter}</div>
+      <div style={{flex:1}}>
+        <div style={{fontSize:14,fontWeight:500,color:selected?"#f0ede6":"#bbb",marginBottom:3}}>{option.label}</div>
+        <div style={{fontSize:12,color:"#666"}}>{option.detail}</div>
+      </div>
+      <div style={{fontSize:15,color:"var(--gold)",opacity:selected?1:0,flexShrink:0}}>✓</div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// LOGIN / REGISTER SCREEN
+// ══════════════════════════════════════════
+function AuthScreen({onAuth}){
+  const [mode, setMode]       = useState("login"); // login | register
+  const [name, setName]       = useState("");
+  const [passcode, setPasscode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
+
+  async function handleRegister(){
+    if(!name.trim()||passcode.length<4){ setError("Enter your name and a passcode of at least 4 digits."); return; }
+    setLoading(true); setError("");
+    const {data:existing} = await sb.from("profiles").select("id").ilike("name",name.trim()).single();
+    if(existing){ setError("That name is already taken. Try adding your last initial."); setLoading(false); return; }
+    const {data,error:err} = await sb.from("profiles").insert({name:name.trim(),passcode}).select().single();
+    if(err){ setError("Something went wrong. Try again."); setLoading(false); return; }
+    onAuth(data);
+    setLoading(false);
+  }
+
+  async function handleLogin(){
+    if(!name.trim()||!passcode){ setError("Enter your name and passcode."); return; }
+    setLoading(true); setError("");
+    const {data,error:err} = await sb.from("profiles").select("*").ilike("name",name.trim()).eq("passcode",passcode).single();
+    if(err||!data){ setError("Name or passcode not found. Check your details and try again."); setLoading(false); return; }
+    onAuth(data);
+    setLoading(false);
+  }
+
+  return (
+    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"24px 16px",background:"radial-gradient(ellipse 80% 50% at 50% 0%,rgba(201,168,76,0.08) 0%,transparent 70%)"}}>
+      <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(32px,9vw,52px)",letterSpacing:"0.04em",lineHeight:1,textAlign:"center",marginBottom:4}}>Sixty Days to Confidence</div>
+      <div style={{fontFamily:"var(--mono)",fontSize:10,color:"#666",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:32,textAlign:"center"}}>Mind · Body · Wealth · 60 Days</div>
+
+      <div style={{width:"100%",maxWidth:400,background:"rgba(255,255,255,0.02)",border:"1px solid var(--border)",borderRadius:8,padding:"28px 24px"}}>
+        <div style={{display:"flex",gap:0,marginBottom:24,borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
+          <button className={`tab${mode==="login"?" active":""}`} onClick={()=>{setMode("login");setError("");}}>Sign In</button>
+          <button className={`tab${mode==="register"?" active":""}`} onClick={()=>{setMode("register");setError("");}}>Create Account</button>
+        </div>
+
+        {error && <div className="error">{error}</div>}
+
+        <div style={{marginBottom:16}}>
+          <div className="section-label" style={{marginTop:0}}>Your Name</div>
+          <input type="text" placeholder="First name or full name" value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(mode==="login"?handleLogin():handleRegister())}/>
+        </div>
+        <div style={{marginBottom:20}}>
+          <div className="section-label" style={{marginTop:0}}>{mode==="register"?"Create a Passcode (4+ digits)":"Your Passcode"}</div>
+          <input type="password" placeholder="Passcode" value={passcode} onChange={e=>setPasscode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(mode==="login"?handleLogin():handleRegister())}/>
+          {mode==="register"&&<div style={{fontSize:11,color:"#555",marginTop:6,fontFamily:"var(--mono)"}}>Remember this — you'll need it to sign in on any device</div>}
+        </div>
+
+        <button className="btn-gold" onClick={mode==="login"?handleLogin:handleRegister} disabled={loading}>
+          {loading&&<span className="spinner"/>}
+          {mode==="login"?"Sign In →":"Create My Account →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// SETUP / COMMITMENTS SCREEN
+// ══════════════════════════════════════════
+function SetupScreen({profile, onSave}){
+  const [form, setForm] = useState({
+    start_date: profile.start_date||"",
+    diet: profile.diet||null,
+    diet_note: profile.diet_note||"",
+    morning_main: profile.morning_main||null,
+    morning_addon: profile.morning_addon||null,
+    exercise: profile.exercise||null,
+    financial: profile.financial||null,
+    financial_note: profile.financial_note||"",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError]     = useState("");
+
+  function set(k,v){ setForm(f=>({...f,[k]:v})); }
+
+  async function save(){
+    if(!form.start_date||!form.diet||!form.morning_main||!form.morning_addon||!form.exercise||!form.financial){
+      setError("Please fill in all commitments and your start date before continuing."); return;
+    }
+    setLoading(true); setError("");
+    const {data,error:err} = await sb.from("profiles").update(form).eq("id",profile.id).select().single();
+    if(err){ setError("Could not save. Try again."); setLoading(false); return; }
+    onSave(data);
+    setLoading(false);
+  }
+
+  const isEdit = !!(profile.diet);
+
+  return (
+    <div style={{maxWidth:640,margin:"0 auto",padding:"28px 16px 60px"}}>
+      <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(28px,7vw,42px)",letterSpacing:"0.04em",marginBottom:4}}>
+        {isEdit?"Edit Your Commitments":"Set Up Your Challenge"}
+      </div>
+      <div style={{fontFamily:"var(--mono)",fontSize:10,color:"#666",letterSpacing:"0.15em",marginBottom:28}}>
+        HI {profile.name.toUpperCase()} · CHOOSE ONCE · COMMIT FOR 60 DAYS
+      </div>
+
+      {error&&<div className="error">{error}</div>}
+
+      <div className="section-label" style={{marginTop:0}}>Challenge Start Date</div>
+      <input type="date" value={form.start_date} onChange={e=>set("start_date",e.target.value)}/>
+
+      <div className="section-label">Commitment 01 — Diet</div>
+      {DIET_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.diet===o.id} onSelect={()=>set("diet",o.id)}/>)}
+      {form.diet&&<textarea style={{marginTop:6}} placeholder={form.diet==="calories"?"Your daily calorie target?":form.diet==="eliminate"?"What foods or drinks are you cutting?":"What are you adding and how many servings per day?"} value={form.diet_note} onChange={e=>set("diet_note",e.target.value)}/>}
+
+      <div className="section-label">Commitment 02 — Morning Main Practice</div>
+      {MORNING_MAIN.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.morning_main===o.id} onSelect={()=>set("morning_main",o.id)}/>)}
+
+      <div className="section-label">Commitment 02 — Morning Add-On</div>
+      {MORNING_ADDON.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.morning_addon===o.id} onSelect={()=>set("morning_addon",o.id)}/>)}
+
+      <div className="section-label">Commitment 03 — Exercise Type</div>
+      {EXERCISE_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.exercise===o.id} onSelect={()=>set("exercise",o.id)}/>)}
+
+      <div className="section-label">Commitment 04 — Financial Plan</div>
+      {FINANCIAL_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.financial===o.id} onSelect={()=>set("financial",o.id)}/>)}
+      {form.financial&&<textarea style={{marginTop:6}} placeholder={form.financial==="debt"?"What debt and what is your 60-day target?":form.financial==="save"?"How much to savings each week?":"What is your income goal for 60 days?"} value={form.financial_note} onChange={e=>set("financial_note",e.target.value)}/>}
+
+      <button className="btn-gold" onClick={save} disabled={loading}>
+        {loading&&<span className="spinner"/>}
+        {isEdit?"Save Changes →":"Lock In My Commitments →"}
+      </button>
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// TRACKER SCREEN
+// ══════════════════════════════════════════
+function TrackerScreen({profile, onEditProfile, onSignOut}){
+  const [checkins, setCheckins] = useState({});
+  const [offset, setOffset]     = useState(0);
+  const [loading, setLoading]   = useState(false);
+  const [saving, setSaving]     = useState(false);
+
+  const startDate = profile.start_date ? new Date(profile.start_date+"T00:00:00") : null;
+  const today     = new Date(); today.setHours(0,0,0,0);
+  const weekStart = getWeekStart(offset);
+  const dates     = weekDates(weekStart);
+
+  // Load checkins for visible week
+  useEffect(()=>{
+    async function load(){
+      setLoading(true);
+      const from = dateKey(dates[0]);
+      const to   = dateKey(dates[6]);
+      const {data} = await sb.from("checkins").select("*").eq("profile_id",profile.id).gte("date",from).lte("date",to);
+      if(data){
+        const map = {};
+        data.forEach(r=>{ map[r.date]=r; });
+        setCheckins(map);
+      }
+      setLoading(false);
+    }
+    load();
+  },[offset, profile.id]);
+
+  // Load all checkins for total tally
+  const [allCheckins, setAllCheckins] = useState([]);
+  useEffect(()=>{
+    async function loadAll(){
+      const {data} = await sb.from("checkins").select("*").eq("profile_id",profile.id);
+      if(data) setAllCheckins(data);
+    }
+    loadAll();
+  },[profile.id]);
+
+  function get(date){
+    const k = dateKey(date);
+    return checkins[k] || {diet:false,morning:false,water:false,money:false,exercise:null,missed:false};
+  }
+
+  async function toggle(date, field){
+    if(date>today) return;
+    const k   = dateKey(date);
+    const prev = get(date);
+    let updated;
+    if(field==="exercise"){
+      const cycle=[null,"HIGH","LOW"];
+      updated = {...prev, exercise:cycle[(cycle.indexOf(prev.exercise)+1)%cycle.length]};
+    } else if(field==="missed"){
+      updated = {...prev, missed:!prev.missed};
+    } else {
+      updated = {...prev, [field]:!prev[field]};
+    }
+    // Optimistic update
+    setCheckins(c=>({...c,[k]:updated}));
+    setSaving(true);
+    const {data,error} = await sb.from("checkins").upsert({profile_id:profile.id,date:k,...updated},{onConflict:"profile_id,date"}).select().single();
+    if(data){
+      setCheckins(c=>({...c,[k]:data}));
+      // refresh all checkins too
+      setAllCheckins(a=>{const filtered=a.filter(r=>r.date!==k); return [...filtered,data];});
+    }
+    setSaving(false);
+  }
+
+  function isPerfect(day){ if(!day||day.missed) return false; return day.diet&&day.morning&&day.water&&day.money&&day.exercise!==null; }
+  function dayScore(day){ if(!day||day.missed) return null; return [day.diet,day.morning,day.water,day.money,day.exercise!==null].filter(Boolean).length; }
+
+  const perfectWeek  = dates.filter(d=>d<=today&&isPerfect(get(d))).length;
+  const perfectTotal = allCheckins.filter(r=>isPerfect(r)).length;
+
+  function challengeDay(date){
+    if(!startDate) return null;
+    const diff = Math.round((date-startDate)/86400000)+1;
+    return diff>=1&&diff<=60?diff:null;
+  }
+
+  const dietLabel    = DIET_OPTIONS.find(o=>o.id===profile.diet)?.label||"Not set";
+  const mainLabel    = MORNING_MAIN.find(o=>o.id===profile.morning_main)?.label||"Not set";
+  const addonLabel   = MORNING_ADDON.find(o=>o.id===profile.morning_addon)?.label||"Not set";
+  const exLabel      = EXERCISE_OPTIONS.find(o=>o.id===profile.exercise)?.label||"Not set";
+  const finLabel     = FINANCIAL_OPTIONS.find(o=>o.id===profile.financial)?.label||"Not set";
+  const weekTitle    = offset===0?"This Week":offset===-1?"Last Week":`${Math.abs(offset)} Weeks Ago`;
+  const wkEnd        = new Date(weekStart); wkEnd.setDate(wkEnd.getDate()+6);
+
+  return (
+    <div style={{minHeight:"100vh",paddingBottom:60}}>
+      {/* HEADER */}
+      <div style={{background:"linear-gradient(180deg,rgba(201,168,76,0.08) 0%,transparent 100%)",borderBottom:"1px solid var(--border)",padding:"20px 16px",textAlign:"center",position:"relative"}}>
+        <button className="btn" onClick={onSignOut} style={{position:"absolute",top:16,left:16,fontSize:9}}>Sign Out</button>
+        <div style={{position:"absolute",top:16,right:16,display:"flex",gap:6,flexDirection:"column",alignItems:"flex-end"}}><button className="btn" onClick={onEditProfile} style={{fontSize:9}}>Edit Setup</button>{window._isAdmin&&<button className="btn" onClick={onDashboard} style={{fontSize:9}}>Dashboard</button>}</div>
+        <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(26px,7vw,44px)",letterSpacing:"0.04em",lineHeight:1}}>Sixty Days to Confidence</div>
+        <div style={{fontFamily:"var(--mono)",fontSize:12,color:"var(--gold)",letterSpacing:"0.2em",textTransform:"uppercase",marginTop:4}}>{profile.name}</div>
+        {startDate&&<div style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",letterSpacing:"0.12em",marginTop:3}}>STARTED {startDate.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>}
+        {saving&&<div style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--gold)",marginTop:4}}><span className="spinner"/>SAVING...</div>}
+      </div>
+
+      {/* COMMITMENT CARD */}
+      <div style={{maxWidth:900,margin:"0 auto",padding:"12px 12px 0"}}>
+        <div style={{background:"rgba(201,168,76,0.04)",border:"1px solid var(--border)",borderRadius:6,padding:"16px 18px",marginBottom:4}}>
+          <div style={{fontFamily:"var(--bebas)",fontSize:18,letterSpacing:"0.04em",color:"var(--gold)",marginBottom:12}}>My Commitments</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px 20px"}}>
+            {[
+              {icon:"🥗",label:"Diet",val:dietLabel,note:profile.diet_note},
+              {icon:"🧠",label:"Morning",val:mainLabel,note:`+ ${addonLabel}`},
+              {icon:"💪",label:"Exercise",val:exLabel,note:"4 days HIGH · 3 days LOW"},
+              {icon:"💰",label:"Financial",val:finLabel,note:profile.financial_note},
+            ].map((r,i)=>(
+              <div key={i} style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+                <span style={{fontSize:13,flexShrink:0,marginTop:1}}>{r.icon}</span>
+                <div>
+                  <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#555",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:2}}>{r.label}</div>
+                  <div style={{fontSize:12,color:"#ddd",lineHeight:1.4,fontWeight:500}}>{r.val}</div>
+                  {r.note&&<div style={{fontSize:11,color:"#555",marginTop:1}}>{r.note}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* TALLY BAR */}
+      <div style={{display:"flex",borderBottom:"1px solid var(--border)",maxWidth:900,margin:"0 auto"}}>
+        {[
+          {label:"Perfect Days — This Week",val:perfectWeek,outOf:"/7",sub:"All 5 done · no missed day"},
+          {label:"Perfect Days — All 60",val:startDate?perfectTotal:"—",outOf:"/60",sub:startDate?"Missed days excluded":"Set start date"},
+        ].map((t,i)=>(
+          <div key={i} style={{flex:1,padding:"14px 16px",borderRight:i===0?"1px solid var(--border)":"none"}}>
+            <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:4}}>{t.label}</div>
+            <div style={{display:"flex",alignItems:"baseline",gap:4}}>
+              <span style={{fontFamily:"var(--bebas)",fontSize:34,color:typeof t.val==="number"&&t.val>0?"var(--gold)":"#333",lineHeight:1}}>{t.val}</span>
+              <span style={{fontFamily:"var(--mono)",fontSize:11,color:"#444"}}>{t.outOf}</span>
+            </div>
+            <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#444",marginTop:2}}>{t.sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* WEEK NAV */}
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)",maxWidth:900,margin:"0 auto"}}>
+        <button className="btn" onClick={()=>setOffset(o=>o-1)}>← Prev</button>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontFamily:"var(--bebas)",fontSize:18,letterSpacing:"0.06em"}}>{weekTitle}</div>
+          <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",letterSpacing:"0.1em"}}>{fmt(weekStart)} – {fmt(wkEnd)}</div>
+        </div>
+        <button className="btn" onClick={()=>setOffset(o=>o+1)} disabled={offset>=0}>Next →</button>
+      </div>
+
+      {/* GRID */}
+      {loading
+        ? <div style={{textAlign:"center",padding:"40px 0",fontFamily:"var(--mono)",fontSize:11,color:"#555"}}><span className="spinner"/>Loading...</div>
+        : <div style={{maxWidth:900,margin:"0 auto",padding:"0 8px"}}>
+
+          {/* Day headers */}
+          <div style={{display:"grid",gridTemplateColumns:"72px repeat(7,1fr)",gap:2,marginTop:10}}>
+            <div/>
+            {dates.map((d,i)=>{
+              const isToday=d.getTime()===today.getTime();
+              const cd=challengeDay(d);
+              return (
+                <div key={i} style={{textAlign:"center",padding:"5px 2px",background:isToday?"var(--faint)":"transparent",borderRadius:4,border:isToday?"1px solid var(--border)":"1px solid transparent"}}>
+                  <div style={{fontFamily:"var(--bebas)",fontSize:12,color:isToday?"var(--gold)":"#666",letterSpacing:"0.06em"}}>{DAYS[i]}</div>
+                  <div style={{fontFamily:"var(--mono)",fontSize:8,color:isToday?"var(--gold)":"#3a3a3a"}}>{d.getMonth()+1}/{d.getDate()}</div>
+                  {cd&&<div style={{fontFamily:"var(--mono)",fontSize:7,color:isToday?"#e8c97a":"#2a2a2a"}}>D{cd}</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Habit rows */}
+          {HABITS.map(h=>(
+            <div key={h.id} style={{display:"grid",gridTemplateColumns:"72px repeat(7,1fr)",gap:2,marginTop:2}}>
+              <div style={{display:"flex",alignItems:"center",gap:4,padding:"0 4px"}}>
+                <span style={{fontSize:12}}>{h.icon}</span>
+                <span style={{fontFamily:"var(--mono)",fontSize:7,color:"#444",letterSpacing:"0.08em",textTransform:"uppercase",lineHeight:1.3}}>{h.label}</span>
+              </div>
+              {dates.map((d,i)=>{
+                const day=get(d); const future=d>today; const checked=day[h.id];
+                return (
+                  <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,h.id)}
+                    style={{padding:"7px 2px",fontSize:12,background:checked?h.bg:"rgba(255,255,255,0.02)",border:`1px solid ${checked?h.color:"rgba(255,255,255,0.05)"}`,color:checked?h.color:"#2a2a2a"}}>
+                    {checked?"✓":"·"}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+
+          {/* Exercise row */}
+          <div style={{display:"grid",gridTemplateColumns:"72px repeat(7,1fr)",gap:2,marginTop:2}}>
+            <div style={{display:"flex",alignItems:"center",gap:4,padding:"0 4px"}}>
+              <span style={{fontSize:12}}>💪</span>
+              <span style={{fontFamily:"var(--mono)",fontSize:7,color:"#444",letterSpacing:"0.08em",textTransform:"uppercase"}}>Exercise</span>
+            </div>
+            {dates.map((d,i)=>{
+              const day=get(d); const future=d>today; const ex=day.exercise;
+              const ec=ex==="HIGH"?"#e05c5c":ex==="LOW"?"#4a8c61":"#2a2a2a";
+              const eb=ex==="HIGH"?"rgba(224,92,92,0.15)":ex==="LOW"?"rgba(74,140,97,0.15)":"rgba(255,255,255,0.02)";
+              return (
+                <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,"exercise")}
+                  style={{padding:"7px 2px",fontSize:10,fontWeight:600,background:eb,border:`1px solid ${ex?ec:"rgba(255,255,255,0.05)"}`,color:ec}}>
+                  {ex||"·"}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Score row */}
+          <div style={{display:"grid",gridTemplateColumns:"72px repeat(7,1fr)",gap:2,marginTop:6}}>
+            <div style={{display:"flex",alignItems:"center",padding:"0 4px"}}>
+              <span style={{fontFamily:"var(--mono)",fontSize:7,color:"#333",letterSpacing:"0.08em",textTransform:"uppercase"}}>Score</span>
+            </div>
+            {dates.map((d,i)=>{
+              const day=get(d); const future=d>today;
+              if(future) return <div key={i}/>;
+              const score=dayScore(day);
+              if(score===null) return (
+                <div key={i} style={{textAlign:"center",padding:"3px 0"}}>
+                  <div style={{fontFamily:"var(--bebas)",fontSize:12,color:"var(--red)",lineHeight:1}}>MISS</div>
+                  <div style={{fontFamily:"var(--mono)",fontSize:7,color:"var(--red)"}}>0/5</div>
+                </div>
+              );
+              const perfect=score===5;
+              const color=perfect?"var(--gold)":score>=3?"#4a8c61":score>0?"#666":"#222";
+              return (
+                <div key={i} style={{textAlign:"center",padding:"3px 0"}}>
+                  <div style={{fontFamily:"var(--bebas)",fontSize:18,color,lineHeight:1}}>{score>0?score:"·"}</div>
+                  <div style={{fontFamily:"var(--mono)",fontSize:7,color:perfect?"var(--gold)":"#2a2a2a"}}>/5</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Missed row */}
+          <div style={{display:"grid",gridTemplateColumns:"72px repeat(7,1fr)",gap:2,marginTop:2}}>
+            <div style={{display:"flex",alignItems:"center",gap:4,padding:"0 4px"}}>
+              <span style={{fontSize:12}}>❌</span>
+              <span style={{fontFamily:"var(--mono)",fontSize:7,color:"#444",letterSpacing:"0.08em",textTransform:"uppercase"}}>Missed</span>
+            </div>
+            {dates.map((d,i)=>{
+              const day=get(d); const future=d>today;
+              return (
+                <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,"missed")}
+                  style={{padding:"7px 2px",fontSize:12,fontWeight:day.missed?700:400,background:day.missed?"rgba(192,57,43,0.18)":"rgba(255,255,255,0.02)",border:`1px solid ${day.missed?"var(--red)":"rgba(255,255,255,0.05)"}`,color:day.missed?"#e05c5c":"#1a1a1a"}}>
+                  {day.missed?"✕":"·"}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Legend */}
+          <div style={{marginTop:18,padding:"12px 14px",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.04)",borderRadius:4}}>
+            <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:8}}>
+              {[["HIGH","#e05c5c","rgba(224,92,92,0.15)","High Intensity · 30+ min Zone 3+"],["LOW","#4a8c61","rgba(74,140,97,0.15)","Active Recovery · 45+ min"]].map(([l,c,b,d])=>(
+                <div key={l} style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div style={{padding:"2px 7px",background:b,border:`1px solid ${c}`,borderRadius:3,fontFamily:"var(--mono)",fontSize:9,color:c,fontWeight:600}}>{l}</div>
+                  <span style={{fontSize:11,color:"#666"}}>{d}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#3a3a3a",lineHeight:1.9}}>
+              TAP habits to check · TAP exercise to cycle HIGH → LOW → clear · TAP missed to flag a missed day<br/>
+              Data saves to cloud instantly · Screenshot to share with your group
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD SCREEN (Admin view)
+// ══════════════════════════════════════════
+function DashboardScreen({onBack}){
+  const [profiles,  setProfiles]  = useState([]);
+  const [checkins,  setCheckins]  = useState([]);
+  const [loading,   setLoading]   = useState(true);
+
+  useEffect(()=>{
+    async function load(){
+      const {data:p} = await sb.from("profiles").select("*").order("name");
+      const {data:c} = await sb.from("checkins").select("*");
+      setProfiles(p||[]);
+      setCheckins(c||[]);
+      setLoading(false);
+    }
+    load();
+  },[]);
+
+  function isPerfect(c){ if(!c||c.missed) return false; return c.diet&&c.morning&&c.water&&c.money&&c.exercise!==null; }
+
+  function statsFor(pid){
+    const pc = checkins.filter(c=>c.profile_id===pid);
+    const perfect = pc.filter(isPerfect).length;
+    const missed  = pc.filter(c=>c.missed).length;
+    const today   = new Date(); today.setHours(0,0,0,0);
+    const todayKey = dateKey(today);
+    const checkedIn = pc.some(c=>c.date===todayKey);
+    return {perfect,missed,checkedIn};
+  }
+
+  const today = new Date();
+  const todayStr = today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+
+  return (
+    <div style={{minHeight:"100vh",paddingBottom:60}}>
+      <div style={{background:"linear-gradient(180deg,rgba(201,168,76,0.08) 0%,transparent 100%)",borderBottom:"1px solid var(--border)",padding:"20px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <button className="btn" onClick={onBack}>← Back</button>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(20px,5vw,32px)",letterSpacing:"0.04em"}}>Group Dashboard</div>
+          <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",letterSpacing:"0.12em"}}>{todayStr.toUpperCase()}</div>
+        </div>
+        <div style={{width:60}}/>
+      </div>
+
+      {loading
+        ? <div style={{textAlign:"center",padding:"60px 0",fontFamily:"var(--mono)",fontSize:11,color:"#555"}}><span className="spinner"/>Loading group data...</div>
+        : <div style={{maxWidth:800,margin:"0 auto",padding:"20px 16px"}}>
+            <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:16}}>{profiles.length} participants enrolled</div>
+            {profiles.map(p=>{
+              const {perfect,missed,checkedIn} = statsFor(p.id);
+              const finLabel = FINANCIAL_OPTIONS.find(o=>o.id===p.financial)?.label||"—";
+              const dietLabel = DIET_OPTIONS.find(o=>o.id===p.diet)?.label||"—";
+              return (
+                <div key={p.id} style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${checkedIn?"rgba(74,140,97,0.3)":"rgba(255,255,255,0.06)"}`,borderRadius:6,padding:"16px 18px",marginBottom:6}}>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
+                    <div>
+                      <div style={{fontFamily:"var(--bebas)",fontSize:22,letterSpacing:"0.04em",lineHeight:1}}>{p.name}</div>
+                      {p.start_date&&<div style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",marginTop:2}}>STARTED {new Date(p.start_date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>}
+                    </div>
+                    <div style={{textAlign:"right"}}>
+                      <div style={{fontFamily:"var(--mono)",fontSize:9,padding:"4px 10px",background:checkedIn?"rgba(74,140,97,0.15)":"rgba(192,57,43,0.1)",border:`1px solid ${checkedIn?"#4a8c61":"rgba(192,57,43,0.3)"}`,borderRadius:2,color:checkedIn?"#6dbf8a":"#888"}}>
+                        {checkedIn?"✓ CHECKED IN TODAY":"NOT YET TODAY"}
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{display:"flex",gap:20,flexWrap:"wrap"}}>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontFamily:"var(--bebas)",fontSize:28,color:"var(--gold)",lineHeight:1}}>{perfect}</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#555"}}>PERFECT DAYS</div>
+                    </div>
+                    <div style={{textAlign:"center"}}>
+                      <div style={{fontFamily:"var(--bebas)",fontSize:28,color:missed>0?"#e05c5c":"#333",lineHeight:1}}>{missed}</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#555"}}>MISSED DAYS</div>
+                    </div>
+                    <div style={{flex:1,minWidth:160}}>
+                      <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444",marginBottom:4}}>DIET · {dietLabel}</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444"}}>FINANCIAL · {finLabel}</div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+      }
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// ROOT APP
+// ══════════════════════════════════════════
+const ADMIN_PASSCODE = "charlotte2025";
+
+function App(){
+  const [screen, setScreen]   = useState("auth"); // auth | setup | tracker | dashboard
+  const [profile, setProfile] = useState(null);
+
+  function handleAuth(p){
+    setProfile(p);
+    if(!p.diet) setScreen("setup");
+    else setScreen("tracker");
+  }
+
+  function handleSetupSave(p){
+    setProfile(p);
+    setScreen("tracker");
+  }
+
+  function handleSignOut(){
+    setProfile(null);
+    setScreen("auth");
+  }
+
+  // Secret dashboard access
+  function handleSignIn(p){
+    handleAuth(p);
+    // Check if admin
+    if(p.passcode===ADMIN_PASSCODE) window._isAdmin=true;
+  }
+
+  if(screen==="auth")      return <AuthScreen onAuth={handleSignIn}/>;
+  if(screen==="setup")     return <SetupScreen profile={profile} onSave={handleSetupSave}/>;
+  if(screen==="dashboard") return <DashboardScreen onBack={()=>setScreen("tracker")}/>;
+  return (
+    <TrackerScreen
+      profile={profile}
+      onEditProfile={()=>setScreen("setup")}
+      onSignOut={handleSignOut}
+      onDashboard={()=>setScreen("dashboard")}
+    />
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
