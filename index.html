@@ -68,6 +68,11 @@ const WATER_OPTIONS = [
   {id:"gallon",  label:"Full Gallon Per Day", detail:"128 oz — a full gallon every single day. The gold standard of hydration commitment."},
 ];
 
+const ALCOHOL_OPTIONS = [
+  {id:"none",    label:"Complete Restriction — No Alcohol",       detail:"Zero alcohol for the full 60 days. No exceptions, no special occasions, no sips."},
+  {id:"limited", label:"Maximum 2 Servings Per Week",             detail:"No more than 2 standard servings per week total. One serving = 6 oz glass of wine, one beer, or one shot. Track it honestly."},
+];
+
 const MORNING_OPTIONS = [
   {id:"read",      label:"Read for 15 Minutes",             detail:"A personal health or personal development book. 15 minutes minimum, every morning."},
   {id:"journal",   label:"Journal for 10–15 Minutes",       detail:"Write freely or use prompts. 10 minutes minimum before the day begins."},
@@ -218,6 +223,8 @@ function AuthScreen({onAuth}){
 function SetupScreen({profile, onSave}){
   const [form,setForm] = useState({
     start_date:       profile.start_date||"",
+    alcohol:           profile.alcohol||null,
+    alcohol_note:      profile.alcohol_note||"",
     diet:             profile.diet||null,
     diet_note:        profile.diet_note||"",
     water:            profile.water||null,
@@ -244,6 +251,7 @@ function SetupScreen({profile, onSave}){
     if(!form.start_date){setError("Please set your challenge start date.");return;}
     if(!form.diet){setError("Please choose your diet commitment.");return;}
     if(!form.water){setError("Please choose your water commitment.");return;}
+    if(!form.alcohol){setError("Please choose your alcohol commitment.");return;}
     const mc = form.morning_choices||[];
     if(mc.length<3){setError("Please choose at least 3 options for your Miracle Morning (up to 5).");return;}
     if(!form.exercise){setError("Please choose your exercise commitment.");return;}
@@ -295,8 +303,19 @@ function SetupScreen({profile, onSave}){
         />
       )}
 
+      {/* ALCOHOL */}
+      <div className="section-label">Commitment 03 — Alcohol</div>
+      {ALCOHOL_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.alcohol===o.id} onSelect={()=>set("alcohol",o.id)}/>)}
+      {form.alcohol&&(
+        <CommitNote
+          value={form.alcohol_note}
+          onChange={v=>set("alcohol_note",v)}
+          placeholder={form.alcohol==="none"?"e.g. I am committing to zero alcohol for all 60 days starting July 1.":"e.g. I will have no more than 2 glasses of wine per week. I will track every serving honestly."}
+        />
+      )}
+
       {/* MIRACLE MORNING */}
-      <div className="section-label">Commitment 03 — Your Miracle Morning</div>
+      <div className="section-label">Commitment 04 — Your Miracle Morning</div>
       <div style={{background:"rgba(123,111,170,0.08)",border:"1px solid rgba(123,111,170,0.2)",borderRadius:4,padding:"10px 14px",marginBottom:12}}>
         <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#7b6faa",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:4}}>Choose Minimum 3 · Maximum 5</div>
         <div style={{fontSize:13,color:"#888",lineHeight:1.6}}>These are the practices you commit to doing every single morning before your day starts. Pick the ones that will genuinely change you. Once chosen — this is your Miracle Morning for 60 days.</div>
@@ -316,7 +335,7 @@ function SetupScreen({profile, onSave}){
       )}
 
       {/* EXERCISE */}
-      <div className="section-label">Commitment 04 — Exercise Plan</div>
+      <div className="section-label">Commitment 05 — Exercise Plan</div>
       {EXERCISE_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.exercise===o.id} onSelect={()=>set("exercise",o.id)}/>)}
       {form.exercise&&(
         <CommitNote
@@ -327,7 +346,7 @@ function SetupScreen({profile, onSave}){
       )}
 
       {/* FINANCIAL */}
-      <div className="section-label">Commitment 05 — Financial Plan</div>
+      <div className="section-label">Commitment 06 — Financial Plan</div>
       {FINANCIAL_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.financial===o.id} onSelect={()=>set("financial",o.id)}/>)}
       {form.financial&&(
         <CommitNote
@@ -394,8 +413,12 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
   function isPerfect(d){ if(!d||d.missed) return false; return d.diet&&d.water&&d.morning&&d.money&&d.exercise!==null; }
   function dayScore(d){ if(!d||d.missed) return null; return [d.diet,d.water,d.morning,d.money,d.exercise!==null].filter(Boolean).length; }
 
-  const perfectWeek  = dates.filter(d=>d<=today&&isPerfect(get(d))).length;
-  const perfectTotal = allCheckins.filter(r=>isPerfect(r)).length;
+  const perfectWeek  = dates.filter(d=>d<=today&&(!startDate||d>=startDate)&&isPerfect(get(d))).length;
+  const perfectTotal = allCheckins.filter(r=>{
+    if(!startDate) return false;
+    const rDate = new Date(r.date+"T00:00:00");
+    return rDate>=startDate && isPerfect(r);
+  }).length;
 
   function cd(date){ if(!startDate) return null; const diff=Math.round((date-startDate)/86400000)+1; return diff>=1&&diff<=60?diff:null; }
 
@@ -431,6 +454,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
             {[
               {icon:"🥗",label:"Diet",       val:dietLabel,     note:profile.diet_note},
               {icon:"💧",label:"Water",      val:waterLabel,    note:profile.water_note},
+              {icon:"🍷",label:"Alcohol",    val:ALCOHOL_OPTIONS.find(o=>o.id===profile.alcohol)?.label||"Not set", note:profile.alcohol_note},
               {icon:"🧠",label:"Miracle Morning", val:`${morningPicks.length} practices`, note:morningPicks.join(" · ")},
               {icon:"💪",label:"Exercise",   val:exLabel,       note:profile.exercise_note},
               {icon:"💰",label:"Financial",  val:finLabel,      note:profile.financial_note},
