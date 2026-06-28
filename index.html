@@ -1226,19 +1226,53 @@ function PolePositionScreen({onBack}){
 // ROOT
 // ══════════════════════════════════════════
 function App(){
-  const [screen,setScreen] = useState("auth");
+  const [screen,setScreen] = useState("loading");
   const [profile,setProfile] = useState(null);
+
+  // Auto-login on mount
+  useEffect(()=>{
+    async function tryAutoLogin(){
+      try {
+        const savedId = localStorage.getItem("c60_profile_id");
+        if(savedId){
+          const {data} = await sb.from("profiles").select("*").eq("id",savedId).maybeSingle();
+          if(data){
+            setProfile(data);
+            const mc = data.morning_choices ? (typeof data.morning_choices==="string"?JSON.parse(data.morning_choices):data.morning_choices) : [];
+            const ready = data.diet && data.water && mc.length>=3 && data.exercise && data.financial;
+            setScreen(ready?"tracker":"setup");
+            return;
+          }
+        }
+      } catch(e){}
+      setScreen("auth");
+    }
+    tryAutoLogin();
+  },[]);
 
   function handleAuth(p){
     setProfile(p);
+    try { localStorage.setItem("c60_profile_id", p.id); } catch(e){}
     const mc = p.morning_choices ? (typeof p.morning_choices==="string"?JSON.parse(p.morning_choices):p.morning_choices) : [];
     const ready = p.diet && p.water && mc.length>=3 && p.exercise && p.financial;
     setScreen(ready?"tracker":"setup");
   }
 
   function handleSetupSave(p){ setProfile(p); setScreen("tracker"); }
-  function handleSignOut(){ setProfile(null); setScreen("auth"); }
+  function handleSignOut(){
+    try { localStorage.removeItem("c60_profile_id"); } catch(e){}
+    setProfile(null);
+    setScreen("auth");
+  }
 
+  if(screen==="loading")   return (
+    <div style={{minHeight:"100vh",background:"#0b0b0b",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{textAlign:"center"}}>
+        <div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:40,color:"var(--gold)",letterSpacing:"0.06em",marginBottom:16}}>60 Days of Winning</div>
+        <span className="spinner"/>
+      </div>
+    </div>
+  );
   if(screen==="pole")      return <PolePositionScreen onBack={()=>setScreen("auth")}/>;
   if(screen==="auth")      return <AuthScreen onAuth={handleAuth} onAdminLogin={()=>setScreen("dashboard")}  onPolePosition={()=>setScreen("pole")}/>; 
   if(screen==="setup")     return <SetupScreen profile={profile} onSave={handleSetupSave}/>;
