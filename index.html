@@ -57,20 +57,15 @@ const HABITS = [
 
 // ── COMMITMENT OPTIONS ──
 const DIET_OPTIONS = [
-  {id:"calories",  label:"Calorie Counting & Restriction",    detail:"Log every meal in an app of your choice. Stay within your daily calorie target every single day."},
-  {id:"eliminate", label:"Give Up the Foods Holding Me Back", detail:"Name the specific foods or drinks you are eliminating. Zero exceptions for 60 days."},
-  {id:"add",       label:"Add a Daily Serving Commitment",    detail:"Commit to a specific number of servings of something healthy — vegetables, protein, fiber — every day."},
+  {id:"calories",  label:"Calorie Counting & Restriction",    detail:"Log every meal in an app of your choice. Stay within your daily calorie target every single day. No alcohol for 60 days."},
+  {id:"eliminate", label:"Give Up the Foods Holding Me Back", detail:"Name the specific foods or drinks you are eliminating. Zero exceptions for 60 days. No alcohol for 60 days."},
+  {id:"add",       label:"Add a Daily Serving Commitment",    detail:"Commit to a specific number of servings of something healthy — vegetables, protein, fiber — every day. No alcohol for 60 days."},
 ];
 
 const WATER_OPTIONS = [
   {id:"half",    label:"Half Gallon Per Day", detail:"64 oz of water every day — minimum. Split however works for you throughout the day."},
   {id:"hundred", label:"100 Ounces Per Day",  detail:"100 oz daily. A step above the standard and a serious commitment to hydration."},
   {id:"gallon",  label:"Full Gallon Per Day", detail:"128 oz — a full gallon every single day. The gold standard of hydration commitment."},
-];
-
-const ALCOHOL_OPTIONS = [
-  {id:"none",    label:"Complete Restriction — No Alcohol",       detail:"Zero alcohol for the full 60 days. No exceptions, no special occasions, no sips."},
-  {id:"limited", label:"Maximum 2 Servings Per Week",             detail:"No more than 2 standard servings per week total. One serving = 6 oz glass of wine, one beer, or one shot. Track it honestly."},
 ];
 
 const MORNING_OPTIONS = [
@@ -165,7 +160,7 @@ function CommitNote({placeholder, value, onChange}){
 // ══════════════════════════════════════════
 // AUTH SCREEN
 // ══════════════════════════════════════════
-function AuthScreen({onAuth}){
+function AuthScreen({onAuth, onAdminLogin, onPolePosition}){
   const [mode,setMode]         = useState("login");
   const [name,setName]         = useState("");
   const [passcode,setPasscode] = useState("");
@@ -190,14 +185,26 @@ function AuthScreen({onAuth}){
     onAuth(data);setLoading(false);
   }
 
+  function handleAdminLogin(){
+    if(passcode==="Charlotte2026!"){
+      onAdminLogin();
+    } else {
+      setError("Incorrect admin passcode.");
+    }
+  }
+
   return (
     <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",justifyContent:"center",alignItems:"center",padding:"24px 16px",background:"radial-gradient(ellipse 80% 50% at 50% 0%,rgba(201,168,76,0.08) 0%,transparent 70%)"}}>
       <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(28px,8vw,48px)",letterSpacing:"0.04em",lineHeight:1,textAlign:"center",marginBottom:4}}>Sixty Days to Confidence</div>
       <div style={{fontFamily:"var(--mono)",fontSize:10,color:"#555",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:32,textAlign:"center"}}>Mind · Body · Wealth · 60 Days</div>
+      <button className="btn" onClick={onPolePosition} style={{marginBottom:16,width:"100%",maxWidth:400,padding:"10px",fontSize:11,letterSpacing:"0.15em"}}>
+        🏁 View Pole Position Standings
+      </button>
       <div style={{width:"100%",maxWidth:400,background:"rgba(255,255,255,0.02)",border:"1px solid var(--border)",borderRadius:8,padding:"28px 24px"}}>
         <div style={{display:"flex",gap:0,marginBottom:24,borderBottom:"1px solid rgba(255,255,255,0.08)"}}>
           <button className={`tab${mode==="login"?" active":""}`} onClick={()=>{setMode("login");setError("");}}>Sign In</button>
           <button className={`tab${mode==="register"?" active":""}`} onClick={()=>{setMode("register");setError("");}}>Create Account</button>
+          <button className={`tab${mode==="admin"?" active":""}`} onClick={()=>{setMode("admin");setError("");}}>Admin</button>
         </div>
         {error&&<div className="error">{error}</div>}
         <div style={{marginBottom:16}}>
@@ -209,9 +216,20 @@ function AuthScreen({onAuth}){
           <input type="password" placeholder="Passcode" value={passcode} onChange={e=>setPasscode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&(mode==="login"?handleLogin():handleRegister())}/>
           {mode==="register"&&<div style={{fontSize:11,color:"#444",marginTop:6,fontFamily:"var(--mono)"}}>Remember this — you'll need it to sign in on any device</div>}
         </div>
-        <button className="btn-gold" onClick={mode==="login"?handleLogin:handleRegister} disabled={loading}>
-          {loading&&<span className="spinner"/>}{mode==="login"?"Sign In →":"Create My Account →"}
-        </button>
+        {mode==="admin" ? (
+          <div>
+            <div className="section-label" style={{marginTop:0}}>Admin Passcode</div>
+            <input type="password" placeholder="Enter admin passcode" value={passcode} onChange={e=>setPasscode(e.target.value)}
+              onKeyDown={e=>e.key==="Enter"&&handleAdminLogin()}/>
+            <button className="btn-gold" onClick={handleAdminLogin} disabled={loading} style={{marginTop:8}}>
+              {loading&&<span className="spinner"/>}Enter Dashboard →
+            </button>
+          </div>
+        ) : (
+          <button className="btn-gold" onClick={mode==="login"?handleLogin:handleRegister} disabled={loading}>
+            {loading&&<span className="spinner"/>}{mode==="login"?"Sign In →":"Create My Account →"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -222,9 +240,8 @@ function AuthScreen({onAuth}){
 // ══════════════════════════════════════════
 function SetupScreen({profile, onSave}){
   const [form,setForm] = useState({
-    start_date:       profile.start_date||"",
-    alcohol:           profile.alcohol||null,
-    alcohol_note:      profile.alcohol_note||"",
+    start_date:       "2026-07-01",
+
     diet:             profile.diet||null,
     diet_note:        profile.diet_note||"",
     water:            profile.water||null,
@@ -248,16 +265,16 @@ function SetupScreen({profile, onSave}){
   }
 
   async function save(){
-    if(!form.start_date){setError("Please set your challenge start date.");return;}
+    if(!form.start_date) set("start_date","2026-07-01");
+    const finalForm = {...form, start_date: "2026-07-01"};
     if(!form.diet){setError("Please choose your diet commitment.");return;}
     if(!form.water){setError("Please choose your water commitment.");return;}
-    if(!form.alcohol){setError("Please choose your alcohol commitment.");return;}
     const mc = form.morning_choices||[];
     if(mc.length<3){setError("Please choose at least 3 options for your Miracle Morning (up to 5).");return;}
     if(!form.exercise){setError("Please choose your exercise commitment.");return;}
     if(!form.financial){setError("Please choose your financial commitment.");return;}
     setLoading(true);setError("");
-    const payload = {...form, morning_choices: JSON.stringify(form.morning_choices)};
+    const payload = {...form, start_date:"2026-07-01", morning_choices: JSON.stringify(form.morning_choices)};
     const {data,error:err} = await sb.from("profiles").update(payload).eq("id",profile.id).select().single();
     if(err){setError("Could not save. Try again.");setLoading(false);return;}
     onSave({...data, morning_choices: form.morning_choices});
@@ -279,7 +296,10 @@ function SetupScreen({profile, onSave}){
 
       {/* START DATE */}
       <div className="section-label" style={{marginTop:0}}>Challenge Start Date</div>
-      <input type="date" value={form.start_date} onChange={e=>set("start_date",e.target.value)}/>
+      <div style={{background:"#111",border:"1px solid rgba(201,168,76,0.3)",padding:"10px 14px",borderRadius:4,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <span style={{fontFamily:"'DM Sans',sans-serif",fontSize:14,color:"var(--gold)"}}>July 1, 2026</span>
+        <span style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",letterSpacing:"0.15em"}}>LOCKED</span>
+      </div>
 
       {/* DIET */}
       <div className="section-label">Commitment 01 — Diet</div>
@@ -303,19 +323,8 @@ function SetupScreen({profile, onSave}){
         />
       )}
 
-      {/* ALCOHOL */}
-      <div className="section-label">Commitment 03 — Alcohol</div>
-      {ALCOHOL_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.alcohol===o.id} onSelect={()=>set("alcohol",o.id)}/>)}
-      {form.alcohol&&(
-        <CommitNote
-          value={form.alcohol_note}
-          onChange={v=>set("alcohol_note",v)}
-          placeholder={form.alcohol==="none"?"e.g. I am committing to zero alcohol for all 60 days starting July 1.":"e.g. I will have no more than 2 glasses of wine per week. I will track every serving honestly."}
-        />
-      )}
-
       {/* MIRACLE MORNING */}
-      <div className="section-label">Commitment 04 — Your Miracle Morning</div>
+      <div className="section-label">Commitment 03 — Your Miracle Morning</div>
       <div style={{background:"rgba(123,111,170,0.08)",border:"1px solid rgba(123,111,170,0.2)",borderRadius:4,padding:"10px 14px",marginBottom:12}}>
         <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#7b6faa",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:4}}>Choose Minimum 3 · Maximum 5</div>
         <div style={{fontSize:13,color:"#888",lineHeight:1.6}}>These are the practices you commit to doing every single morning before your day starts. Pick the ones that will genuinely change you. Once chosen — this is your Miracle Morning for 60 days.</div>
@@ -335,7 +344,7 @@ function SetupScreen({profile, onSave}){
       )}
 
       {/* EXERCISE */}
-      <div className="section-label">Commitment 05 — Exercise Plan</div>
+      <div className="section-label">Commitment 04 — Exercise Plan</div>
       {EXERCISE_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.exercise===o.id} onSelect={()=>set("exercise",o.id)}/>)}
       {form.exercise&&(
         <CommitNote
@@ -346,7 +355,7 @@ function SetupScreen({profile, onSave}){
       )}
 
       {/* FINANCIAL */}
-      <div className="section-label">Commitment 06 — Financial Plan</div>
+      <div className="section-label">Commitment 05 — Financial Plan</div>
       {FINANCIAL_OPTIONS.map((o,i)=><ChoiceCard key={o.id} option={o} letter={String.fromCharCode(65+i)} selected={form.financial===o.id} onSelect={()=>set("financial",o.id)}/>)}
       {form.financial&&(
         <CommitNote
@@ -367,7 +376,7 @@ function SetupScreen({profile, onSave}){
 // ══════════════════════════════════════════
 // TRACKER SCREEN
 // ══════════════════════════════════════════
-function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
+function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePosition}){
   const [checkins,setCheckins]   = useState({});
   const [offset,setOffset]       = useState(0);
   const [loading,setLoading]     = useState(false);
@@ -396,13 +405,40 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
 
   function get(date){ return checkins[dateKey(date)]||{diet:false,water:false,morning:false,money:false,exercise:null,missed:false}; }
 
+  // Returns true if NOW is within the valid window for a given date
+  // Window: 4:00 AM on that date to 3:59 AM the next day
+  function isInWindow(date){
+    const now = new Date();
+    const windowOpen = new Date(date); windowOpen.setHours(4,0,0,0);
+    const windowClose = new Date(date); windowClose.setDate(windowClose.getDate()+1); windowClose.setHours(3,59,59,999);
+    return now >= windowOpen && now <= windowClose;
+  }
+
+  // Returns true if a timestamp falls within the valid window for a given date string
+  function timestampInWindow(dateStr, ts){
+    if(!ts) return false;
+    const date = new Date(dateStr+"T00:00:00");
+    const windowOpen = new Date(date); windowOpen.setHours(4,0,0,0);
+    const windowClose = new Date(date); windowClose.setDate(windowClose.getDate()+1); windowClose.setHours(3,59,59,999);
+    const t = new Date(ts);
+    return t >= windowOpen && t <= windowClose;
+  }
+
   async function toggle(date,field){
     if(date>today) return;
     const k=dateKey(date), prev=get(date);
+    const now = new Date().toISOString();
     let updated;
-    if(field==="exercise"){ const c=[null,"HIGH","LOW"]; updated={...prev,exercise:c[(c.indexOf(prev.exercise)+1)%c.length]}; }
-    else if(field==="missed"){ updated={...prev,missed:!prev.missed}; }
-    else { updated={...prev,[field]:!prev[field]}; }
+    if(field==="exercise"){
+      const c=[null,"HIGH","LOW"];
+      const next = c[(c.indexOf(prev.exercise)+1)%c.length];
+      updated={...prev, exercise:next, exercise_ts: next ? now : null};
+    } else if(field==="missed"){
+      updated={...prev,missed:!prev.missed};
+    } else {
+      const turning_on = !prev[field];
+      updated={...prev,[field]:turning_on, [`${field}_ts`]: turning_on ? now : null};
+    }
     setCheckins(c=>({...c,[k]:updated}));
     setSaving(true);
     const {data} = await sb.from("checkins").upsert({profile_id:profile.id,date:k,...updated},{onConflict:"profile_id,date"}).select().single();
@@ -410,14 +446,47 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
     setSaving(false);
   }
 
-  function isPerfect(d){ if(!d||d.missed) return false; return d.diet&&d.water&&d.morning&&d.money&&d.exercise!==null; }
-  function dayScore(d){ if(!d||d.missed) return null; return [d.diet,d.water,d.morning,d.money,d.exercise!==null].filter(Boolean).length; }
+  // A habit counts as "on time" only if its timestamp falls within the day's window
+  function habitOnTime(rec, dateStr, field){
+    if(!rec || !rec[field]) return false;
+    const ts = rec[`${field}_ts`];
+    return timestampInWindow(dateStr, ts);
+  }
 
-  const perfectWeek  = dates.filter(d=>d<=today&&(!startDate||d>=startDate)&&isPerfect(get(d))).length;
+  function exerciseOnTime(rec, dateStr){
+    if(!rec || !rec.exercise) return false;
+    return timestampInWindow(dateStr, rec.exercise_ts);
+  }
+
+  function isPerfect(d, dateStr){
+    if(!d||d.missed) return false;
+    if(!dateStr) return false;
+    return habitOnTime(d,dateStr,"diet") &&
+           habitOnTime(d,dateStr,"water") &&
+           habitOnTime(d,dateStr,"morning") &&
+           habitOnTime(d,dateStr,"money") &&
+           exerciseOnTime(d,dateStr);
+  }
+
+  function dayScore(d){ if(!d||d.missed) return null; return [d.diet,d.water,d.morning,d.money,d.exercise!==null].filter(Boolean).length; }
+  
+  // How many habits are on-time for a given day
+  function onTimeScore(d, dateStr){
+    if(!d||d.missed||!dateStr) return 0;
+    return [
+      habitOnTime(d,dateStr,"diet"),
+      habitOnTime(d,dateStr,"water"),
+      habitOnTime(d,dateStr,"morning"),
+      habitOnTime(d,dateStr,"money"),
+      exerciseOnTime(d,dateStr),
+    ].filter(Boolean).length;
+  }
+
+  const perfectWeek  = dates.filter(d=>d<=today&&(!startDate||d>=startDate)&&isPerfect(get(d),dateKey(d))).length;
   const perfectTotal = allCheckins.filter(r=>{
     if(!startDate) return false;
     const rDate = new Date(r.date+"T00:00:00");
-    return rDate>=startDate && isPerfect(r);
+    return rDate>=startDate && isPerfect(r, r.date);
   }).length;
 
   function cd(date){ if(!startDate) return null; const diff=Math.round((date-startDate)/86400000)+1; return diff>=1&&diff<=60?diff:null; }
@@ -438,12 +507,43 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
         <button className="btn" onClick={onSignOut} style={{position:"absolute",top:16,left:16,fontSize:9}}>Sign Out</button>
         <div style={{position:"absolute",top:16,right:16,display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
           <button className="btn" onClick={onEditProfile} style={{fontSize:9}}>Edit Setup</button>
+          <button className="btn" onClick={onPolePosition} style={{fontSize:9}}>🏁 Pole Position</button>
           {profile.passcode==="charlotte2025"&&<button className="btn" onClick={onDashboard} style={{fontSize:9}}>Dashboard</button>}
         </div>
         <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(22px,6vw,40px)",letterSpacing:"0.04em",lineHeight:1}}>Sixty Days to Confidence</div>
         <div style={{fontFamily:"var(--mono)",fontSize:12,color:"var(--gold)",letterSpacing:"0.2em",textTransform:"uppercase",marginTop:4}}>{profile.name}</div>
         {startDate&&<div style={{fontFamily:"var(--mono)",fontSize:9,color:"#444",letterSpacing:"0.12em",marginTop:3}}>STARTED {startDate.toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>}
         {saving&&<div style={{fontFamily:"var(--mono)",fontSize:9,color:"var(--gold)",marginTop:4}}><span className="spinner"/>SAVING...</div>}
+        {(() => {
+          // Calculate earliest possible finish date based on misses used
+          const missesUsed = allCheckins.filter(r => r.missed).length;
+          const start = new Date("2026-07-01T00:00:00");
+          const deadline = new Date("2026-09-01T00:00:00");
+          const finishDay = new Date(start);
+          finishDay.setDate(finishDay.getDate() + 59 + missesUsed); // day 60 + miss days
+          const isPast = finishDay > deadline;
+          const finishStr = finishDay.toLocaleDateString("en-US", {month:"long", day:"numeric"});
+          return (
+            <div style={{
+              display:"inline-block",
+              marginTop:8,
+              padding:"6px 14px",
+              background: isPast ? "rgba(192,57,43,0.15)" : "rgba(201,168,76,0.08)",
+              border: `1px solid ${isPast ? "#c0392b" : "rgba(201,168,76,0.3)"}`,
+              borderRadius:3,
+            }}>
+              <div style={{fontFamily:"var(--mono)",fontSize:8,color:isPast?"#e05c5c":"#666",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:2}}>
+                Earliest Finish Date
+              </div>
+              <div style={{fontFamily:"var(--bebas)",fontSize:18,color:isPast?"#e05c5c":"var(--gold)",letterSpacing:"0.06em",lineHeight:1}}>
+                {isPast ? "Not able to complete in time" : finishStr}
+              </div>
+              {!isPast && <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#555",marginTop:2}}>
+                {missesUsed === 0 ? "No misses used" : `${missesUsed} miss${missesUsed>1?"es":""} used`}
+              </div>}
+            </div>
+          );
+        })()}
       </div>
 
       {/* COMMITMENT SUMMARY */}
@@ -454,7 +554,6 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
             {[
               {icon:"🥗",label:"Diet",       val:dietLabel,     note:profile.diet_note},
               {icon:"💧",label:"Water",      val:waterLabel,    note:profile.water_note},
-              {icon:"🍷",label:"Alcohol",    val:ALCOHOL_OPTIONS.find(o=>o.id===profile.alcohol)?.label||"Not set", note:profile.alcohol_note},
               {icon:"🧠",label:"Miracle Morning", val:`${morningPicks.length} practices`, note:morningPicks.join(" · ")},
               {icon:"💪",label:"Exercise",   val:exLabel,       note:profile.exercise_note},
               {icon:"💰",label:"Financial",  val:finLabel,      note:profile.financial_note},
@@ -526,11 +625,18 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
                   <span style={{fontFamily:"var(--mono)",fontSize:7,color:"#444",letterSpacing:"0.07em",textTransform:"uppercase",lineHeight:1.3}}>{h.label}</span>
                 </div>
                 {dates.map((d,i)=>{
-                  const day=get(d),future=d>today,checked=day[h.id];
+                  const day=get(d), future=d>today, checked=day[h.id];
+                  const dk=dateKey(d);
+                  const onTime = checked && habitOnTime(day, dk, h.id);
+                  const late   = checked && !onTime;
+                  const bg    = onTime ? h.bg : late ? "rgba(100,100,100,0.1)" : "rgba(255,255,255,0.02)";
+                  const borderC = onTime ? h.color : late ? "#555" : "rgba(255,255,255,0.05)";
+                  const textC   = onTime ? h.color : late ? "#555" : "#222";
                   return (
                     <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,h.id)}
-                      style={{padding:"7px 2px",fontSize:12,background:checked?h.bg:"rgba(255,255,255,0.02)",border:`1px solid ${checked?h.color:"rgba(255,255,255,0.05)"}`,color:checked?h.color:"#222"}}>
-                      {checked?"✓":"·"}
+                      style={{padding:"7px 2px",fontSize:12,background:bg,border:`1px solid ${borderC}`,color:textC,position:"relative"}}>
+                      {checked ? "✓" : "·"}
+                      {late && <span style={{position:"absolute",top:1,right:2,fontSize:6,color:"#666",fontFamily:"var(--mono)"}}>LATE</span>}
                     </button>
                   );
                 })}
@@ -544,13 +650,17 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
                 <span style={{fontFamily:"var(--mono)",fontSize:7,color:"#444",letterSpacing:"0.07em",textTransform:"uppercase"}}>Exercise</span>
               </div>
               {dates.map((d,i)=>{
-                const day=get(d),future=d>today,ex=day.exercise;
-                const ec=ex==="HIGH"?"#e05c5c":ex==="LOW"?"#4a8c61":"#222";
-                const eb=ex==="HIGH"?"rgba(224,92,92,0.15)":ex==="LOW"?"rgba(74,140,97,0.15)":"rgba(255,255,255,0.02)";
+                const day=get(d), future=d>today, ex=day.exercise;
+                const dk=dateKey(d);
+                const onTime = exerciseOnTime(day, dk);
+                const late   = ex && !onTime;
+                const ec = late ? "#555" : ex==="HIGH" ? "#e05c5c" : ex==="LOW" ? "#4a8c61" : "#222";
+                const eb = late ? "rgba(100,100,100,0.1)" : ex==="HIGH" ? "rgba(224,92,92,0.15)" : ex==="LOW" ? "rgba(74,140,97,0.15)" : "rgba(255,255,255,0.02)";
                 return (
                   <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,"exercise")}
-                    style={{padding:"7px 2px",fontSize:10,fontWeight:600,background:eb,border:`1px solid ${ex?ec:"rgba(255,255,255,0.05)"}`,color:ec}}>
+                    style={{padding:"7px 2px",fontSize:10,fontWeight:600,background:eb,border:`1px solid ${ex?ec:"rgba(255,255,255,0.05)"}`,color:ec,position:"relative"}}>
                     {ex||"·"}
+                    {late && <span style={{position:"absolute",top:1,right:2,fontSize:6,color:"#666",fontFamily:"var(--mono)"}}>LATE</span>}
                   </button>
                 );
               })}
@@ -610,6 +720,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
               </div>
               <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#2a2a2a",lineHeight:1.9}}>
                 TAP habits to check · TAP exercise to cycle HIGH → LOW → clear · TAP missed to flag a missed day<br/>
+                <span style={{color:"#4a8c61"}}>GREEN</span> = checked on time (4AM–3:59AM) · <span style={{color:"#555"}}>GRAY</span> = checked late · Late checks do not count toward perfect days<br/>
                 All data saves to cloud instantly · Screenshot to share with your group
               </div>
             </div>
@@ -623,71 +734,451 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard}){
 // DASHBOARD
 // ══════════════════════════════════════════
 function DashboardScreen({onBack}){
-  const [profiles,setProfiles] = useState([]);
-  const [checkins,setCheckins] = useState([]);
-  const [loading,setLoading]   = useState(true);
+  const [profiles,setProfiles]   = useState([]);
+  const [checkins,setCheckins]   = useState([]);
+  const [loading,setLoading]     = useState(true);
+  const [refreshing,setRefresh]  = useState(false);
+  const [expanded,setExpanded]   = useState(null);
+
+  async function loadData(){
+    const {data:p} = await sb.from("profiles").select("*").order("name");
+    const {data:c} = await sb.from("checkins").select("*");
+    setProfiles(p||[]); setCheckins(c||[]);
+  }
 
   useEffect(()=>{
-    async function load(){
-      const {data:p} = await sb.from("profiles").select("*").order("name");
-      const {data:c} = await sb.from("checkins").select("*");
-      setProfiles(p||[]); setCheckins(c||[]); setLoading(false);
-    }
-    load();
+    loadData().then(()=>setLoading(false));
   },[]);
 
-  function isPerfect(c){ if(!c||c.missed) return false; return c.diet&&c.water&&c.morning&&c.money&&c.exercise!==null; }
+  async function refresh(){
+    setRefresh(true);
+    await loadData();
+    setRefresh(false);
+  }
+
+  async function deleteAccount(pid, pname){
+    if(!window.confirm(`Delete ${pname}?\n\nThis will permanently remove their account AND all their check-in data. This cannot be undone.`)) return;
+    // Delete check-ins first, then profile
+    await sb.from("checkins").delete().eq("profile_id", pid);
+    await sb.from("profiles").delete().eq("id", pid);
+    await loadData();
+  }
+
+  const startDate = new Date("2026-07-01T00:00:00");
+  const today     = new Date(); today.setHours(0,0,0,0);
+  const todayKey  = dateKey(today);
+
+  function isPerfect(c,dateStr){
+    if(!c||c.missed) return false;
+    function inWindow(ts){
+      if(!ts) return false;
+      const date=new Date(dateStr+"T00:00:00");
+      const open=new Date(date); open.setHours(4,0,0,0);
+      const close=new Date(date); close.setDate(close.getDate()+1); close.setHours(3,59,59,999);
+      const t=new Date(ts);
+      return t>=open&&t<=close;
+    }
+    return inWindow(c.diet_ts)&&inWindow(c.water_ts)&&inWindow(c.morning_ts)&&inWindow(c.money_ts)&&inWindow(c.exercise_ts);
+  }
 
   function statsFor(pid){
     const pc=checkins.filter(c=>c.profile_id===pid);
-    const perfect=pc.filter(isPerfect).length;
+    const perfect=pc.filter(c=>isPerfect(c,c.date)).length;
     const missed=pc.filter(c=>c.missed).length;
-    const todayKey=dateKey(new Date());
     const checkedIn=pc.some(c=>c.date===todayKey);
-    return {perfect,missed,checkedIn};
+    const todayRec=pc.find(c=>c.date===todayKey)||{};
+    // last 7 days
+    const last7=[];
+    for(let i=6;i>=0;i--){
+      const d=new Date(today); d.setDate(d.getDate()-i);
+      if(d<startDate){last7.push(null);continue;}
+      const dk=dateKey(d);
+      const rec=pc.find(c=>c.date===dk);
+      last7.push(rec||false);
+    }
+    return {perfect,missed,checkedIn,todayRec,last7,pc};
   }
 
+  // Summary counts
+  const checkedInToday = profiles.filter(p=>checkins.some(c=>c.profile_id===p.id&&c.date===todayKey)).length;
+  const notYet         = profiles.length - checkedInToday;
+
+  const dietLabel   = id => DIET_OPTIONS.find(o=>o.id===id)?.label||"—";
+  const exLabel     = id => EXERCISE_OPTIONS.find(o=>o.id===id)?.label||"—";
+  const finLabel    = id => FINANCIAL_OPTIONS.find(o=>o.id===id)?.label||"—";
+  const waterLabel  = id => WATER_OPTIONS.find(o=>o.id===id)?.label||"—";
+
+  const HABITS_D = [
+    {id:"diet",icon:"🥗",label:"Diet"},
+    {id:"water",icon:"💧",label:"Water"},
+    {id:"morning",icon:"🧠",label:"Morning"},
+    {id:"money",icon:"💰",label:"Budget"},
+  ];
+
   return (
-    <div style={{minHeight:"100vh",paddingBottom:60}}>
-      <div style={{background:"linear-gradient(180deg,rgba(201,168,76,0.08) 0%,transparent 100%)",borderBottom:"1px solid var(--border)",padding:"20px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+    <div style={{minHeight:"100vh",paddingBottom:60,background:"#0b0b0b"}}>
+      {/* Header */}
+      <div style={{background:"linear-gradient(180deg,rgba(201,168,76,0.08) 0%,transparent 100%)",borderBottom:"1px solid var(--border)",padding:"16px 16px",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
         <button className="btn" onClick={onBack}>← Back</button>
         <div style={{textAlign:"center"}}>
-          <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(20px,5vw,32px)",letterSpacing:"0.04em"}}>Group Dashboard</div>
-          <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#444",letterSpacing:"0.12em"}}>{new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"}).toUpperCase()}</div>
+          <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(18px,5vw,30px)",letterSpacing:"0.04em"}}>Admin Dashboard</div>
+          <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#555",letterSpacing:"0.1em"}}>
+            {today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase()}
+          </div>
         </div>
-        <div style={{width:60}}/>
+        <button className="btn" onClick={refresh} style={{fontSize:9}}>
+          {refreshing?<span className="spinner"/>:"↻ Refresh"}
+        </button>
       </div>
+
       {loading
-        ? <div style={{textAlign:"center",padding:"60px 0",fontFamily:"var(--mono)",fontSize:11,color:"#444"}}><span className="spinner"/>Loading group data...</div>
-        : <div style={{maxWidth:800,margin:"0 auto",padding:"20px 16px"}}>
-            <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#444",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:16}}>{profiles.length} participants enrolled</div>
-            {profiles.map(p=>{
-              const {perfect,missed,checkedIn}=statsFor(p.id);
-              return (
-                <div key={p.id} style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${checkedIn?"rgba(74,140,97,0.3)":"rgba(255,255,255,0.05)"}`,borderRadius:6,padding:"16px 18px",marginBottom:6}}>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:10}}>
-                    <div>
-                      <div style={{fontFamily:"var(--bebas)",fontSize:22,letterSpacing:"0.04em",lineHeight:1}}>{p.name}</div>
-                      {p.start_date&&<div style={{fontFamily:"var(--mono)",fontSize:9,color:"#444",marginTop:2}}>STARTED {new Date(p.start_date+"T00:00:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</div>}
+        ? <div style={{textAlign:"center",padding:"60px 0",fontFamily:"var(--mono)",fontSize:11,color:"#444"}}><span className="spinner"/>Loading...</div>
+        : <div style={{maxWidth:860,margin:"0 auto",padding:"16px 12px"}}>
+
+          {/* Today summary bar */}
+          <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:2,marginBottom:16}}>
+            {[
+              {val:profiles.length,label:"ENROLLED",color:"var(--gold)"},
+              {val:checkedInToday,label:"CHECKED IN TODAY",color:"#4a8c61"},
+              {val:notYet,label:"NOT YET TODAY",color:notYet>0?"#e05c5c":"#333"},
+              {val:profiles.filter(p=>{const s=statsFor(p.id);return s.missed>=3;}).length,label:"ON LAST MISS",color:"#e05c5c"},
+            ].map((s,i)=>(
+              <div key={i} style={{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",padding:"14px 12px",textAlign:"center",borderRadius:4}}>
+                <div style={{fontFamily:"var(--bebas)",fontSize:32,color:s.color,lineHeight:1}}>{s.val}</div>
+                <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#555",letterSpacing:"0.12em",marginTop:4}}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Per-person cards */}
+          {profiles.map(p=>{
+            const {perfect,missed,checkedIn,todayRec,last7}=statsFor(p.id);
+            const isExp = expanded===p.id;
+            const missColor = missed===0?"#333":missed>=3?"#e05c5c":"#c9a84c";
+            const challengeDay = p.start_date ? Math.floor((today-new Date(p.start_date+"T00:00:00"))/86400000)+1 : null;
+            return (
+              <div key={p.id} style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${checkedIn?"rgba(74,140,97,0.35)":missed>=3?"rgba(224,92,92,0.3)":"rgba(255,255,255,0.05)"}`,borderRadius:6,marginBottom:4,overflow:"hidden"}}>
+                {/* Main row */}
+                <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer"}}
+                  onClick={()=>setExpanded(isExp?null:p.id)}>
+                  {/* Name + status */}
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+                      <div style={{fontFamily:"var(--bebas)",fontSize:20,letterSpacing:"0.04em",lineHeight:1}}>{p.name}</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:8,padding:"3px 8px",borderRadius:2,
+                        background:checkedIn?"rgba(74,140,97,0.15)":"rgba(192,57,43,0.1)",
+                        border:`1px solid ${checkedIn?"#4a8c61":"rgba(192,57,43,0.3)"}`,
+                        color:checkedIn?"#6dbf8a":"#666"}}>
+                        {checkedIn?"✓ IN TODAY":"NOT YET"}
+                      </div>
                     </div>
-                    <div style={{fontFamily:"var(--mono)",fontSize:9,padding:"4px 10px",background:checkedIn?"rgba(74,140,97,0.15)":"rgba(192,57,43,0.1)",border:`1px solid ${checkedIn?"#4a8c61":"rgba(192,57,43,0.3)"}`,borderRadius:2,color:checkedIn?"#6dbf8a":"#666"}}>
-                      {checkedIn?"✓ CHECKED IN TODAY":"NOT YET TODAY"}
-                    </div>
+                    {challengeDay&&<div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444",marginTop:2}}>DAY {Math.min(challengeDay,63)} OF 63</div>}
                   </div>
-                  <div style={{display:"flex",gap:24,flexWrap:"wrap"}}>
+                  {/* Stats */}
+                  <div style={{display:"flex",gap:16,flexShrink:0}}>
                     <div style={{textAlign:"center"}}>
-                      <div style={{fontFamily:"var(--bebas)",fontSize:28,color:"var(--gold)",lineHeight:1}}>{perfect}</div>
-                      <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444"}}>PERFECT DAYS</div>
+                      <div style={{fontFamily:"var(--bebas)",fontSize:22,color:"var(--gold)",lineHeight:1}}>{perfect}</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#444"}}>PERFECT</div>
                     </div>
                     <div style={{textAlign:"center"}}>
-                      <div style={{fontFamily:"var(--bebas)",fontSize:28,color:missed>0?"#e05c5c":"#2a2a2a",lineHeight:1}}>{missed}</div>
-                      <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444"}}>MISSED DAYS</div>
+                      <div style={{fontFamily:"var(--bebas)",fontSize:22,color:missColor,lineHeight:1}}>{missed}</div>
+                      <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#444"}}>MISSED</div>
                     </div>
+                    <div style={{fontFamily:"var(--mono)",fontSize:14,color:"#555",alignSelf:"center"}}>{isExp?"▲":"▼"}</div>
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Last 7 days mini grid */}
+                <div style={{display:"flex",gap:2,padding:"0 16px 12px"}}>
+                  {last7.map((rec,i)=>{
+                    if(rec===null) return <div key={i} style={{flex:1,height:8,background:"#111",borderRadius:2}}/>;
+                    if(rec===false) return <div key={i} style={{flex:1,height:8,background:"rgba(192,57,43,0.2)",borderRadius:2}}/>;
+                    const score=[rec.diet,rec.water,rec.morning,rec.money,rec.exercise!==null].filter(Boolean).length;
+                    const pct=score/5;
+                    const color=rec.missed?"#c0392b":pct===1?"#c9a84c":pct>=0.6?"#4a8c61":"#555";
+                    return <div key={i} style={{flex:1,height:8,background:color,borderRadius:2,opacity:rec.missed?0.5:1}}/>;
+                  })}
+                </div>
+
+                {/* Expanded detail */}
+                {isExp&&(
+                  <div style={{borderTop:"1px solid rgba(255,255,255,0.05)",padding:"16px"}}>
+                    {/* Today's habits */}
+                    <div style={{fontFamily:"var(--mono)",fontSize:8,color:"var(--gold)",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:10}}>Today's Check-In</div>
+                    <div style={{display:"flex",gap:8,flexWrap:"wrap",marginBottom:16}}>
+                      {HABITS_D.map(h=>{
+                        const done=todayRec[h.id];
+                        return(
+                          <div key={h.id} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",
+                            background:done?"rgba(74,140,97,0.12)":"rgba(255,255,255,0.02)",
+                            border:`1px solid ${done?"#4a8c61":"rgba(255,255,255,0.06)"}`,borderRadius:3}}>
+                            <span style={{fontSize:12}}>{h.icon}</span>
+                            <span style={{fontFamily:"var(--mono)",fontSize:9,color:done?"#6dbf8a":"#444"}}>{done?"✓":"-"} {h.label}</span>
+                          </div>
+                        );
+                      })}
+                      <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",
+                        background:todayRec.exercise?"rgba(224,92,92,0.1)":"rgba(255,255,255,0.02)",
+                        border:`1px solid ${todayRec.exercise?"#e05c5c":"rgba(255,255,255,0.06)"}`,borderRadius:3}}>
+                        <span style={{fontSize:12}}>💪</span>
+                        <span style={{fontFamily:"var(--mono)",fontSize:9,color:todayRec.exercise?"#e05c5c":"#444"}}>
+                          {todayRec.exercise||"-"} Exercise
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Commitments */}
+                    <div style={{fontFamily:"var(--mono)",fontSize:8,color:"var(--gold)",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:8}}>Their Commitments</div>
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 16px"}}>
+                      {[
+                        {icon:"🥗",label:"Diet",val:dietLabel(p.diet)},
+                        {icon:"💧",label:"Water",val:waterLabel(p.water)},
+                        {icon:"💪",label:"Exercise",val:exLabel(p.exercise)},
+                        {icon:"💰",label:"Financial",val:finLabel(p.financial)},
+                      ].map((r,i)=>(
+                        <div key={i} style={{display:"flex",gap:6,alignItems:"flex-start"}}>
+                          <span style={{fontSize:11,flexShrink:0}}>{r.icon}</span>
+                          <div>
+                            <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#444",textTransform:"uppercase"}}>{r.label}</div>
+                            <div style={{fontSize:11,color:"#bbb"}}>{r.val}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Miss status */}
+                    <div style={{marginTop:12,display:"flex",gap:8}}>
+                      {["Miss 1
+(Free)","Miss 2
+($25)","Miss 3
+($25)"].map((lbl,i)=>{
+                        const used=missed>i;
+                        return(
+                          <div key={i} style={{flex:1,textAlign:"center",padding:"8px 4px",
+                            background:used?"rgba(192,57,43,0.15)":"rgba(255,255,255,0.02)",
+                            border:`1px solid ${used?"#c0392b":"rgba(255,255,255,0.06)"}`,borderRadius:3}}>
+                            <div style={{fontSize:14}}>{used?"✕":"○"}</div>
+                            <div style={{fontFamily:"var(--mono)",fontSize:7,color:used?"#e05c5c":"#444",marginTop:2,whiteSpace:"pre-line"}}>{lbl}</div>
+                          </div>
+                        );
+                      })}
+                      <div style={{flex:1,textAlign:"center",padding:"8px 4px",
+                        background:missed>=4?"rgba(192,57,43,0.3)":"rgba(255,255,255,0.02)",
+                        border:`1px solid ${missed>=4?"#c0392b":"rgba(255,255,255,0.06)"}`,borderRadius:3}}>
+                        <div style={{fontSize:14}}>{missed>=4?"❌":"—"}</div>
+                        <div style={{fontFamily:"var(--mono)",fontSize:7,color:missed>=4?"#e05c5c":"#444",marginTop:2}}>{"Miss 4
+(Out)"}</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      }
+    </div>
+  );
+}
+
+// ══════════════════════════════════════════
+// POLE POSITION — PUBLIC LEADERBOARD
+// ══════════════════════════════════════════
+function PolePositionScreen({onBack}){
+  const [players,setPlayers]   = useState([]);
+  const [checkins,setCheckins] = useState([]);
+  const [loading,setLoading]   = useState(true);
+  const [refreshing,setRefresh] = useState(false);
+
+  const CHALLENGE_START = new Date("2026-07-01T00:00:00");
+  const DEADLINE        = new Date("2026-09-01T00:00:00");
+  const today           = new Date(); today.setHours(0,0,0,0);
+
+  async function loadData(){
+    const {data:p} = await sb.from("profiles").select("id,name,phone,start_date,diet,exercise,financial").order("name");
+    const {data:c} = await sb.from("checkins").select("profile_id,date,missed,diet,water,morning,money,exercise,diet_ts,water_ts,morning_ts,money_ts,exercise_ts");
+    setPlayers(p||[]); setCheckins(c||[]);
+  }
+
+  useEffect(()=>{ loadData().then(()=>setLoading(false)); },[]);
+
+  async function refresh(){ setRefresh(true); await loadData(); setRefresh(false); }
+
+  function getStats(pid){
+    const pc = checkins.filter(c=>c.profile_id===pid);
+    const missedDays = pc.filter(c=>c.missed).length;
+
+    function inWindow(rec,field){
+      if(!rec||!rec[field]) return false;
+      const ts = rec[`${field}_ts`];
+      if(!ts) return false;
+      const date = new Date(rec.date+"T00:00:00");
+      const open = new Date(date); open.setHours(4,0,0,0);
+      const close = new Date(date); close.setDate(close.getDate()+1); close.setHours(3,59,59,999);
+      const t = new Date(ts);
+      return t>=open && t<=close;
+    }
+
+    const perfectDays = pc.filter(c =>
+      !c.missed &&
+      inWindow(c,"diet") && inWindow(c,"water") &&
+      inWindow(c,"morning") && inWindow(c,"money") && inWindow(c,"exercise")
+    ).length;
+
+    const todayKey = dateKey(today);
+    const checkedInToday = pc.some(c=>c.date===todayKey);
+
+    // Earliest finish = day 60 + missed days elapsed from July 1
+    const finishDate = new Date(CHALLENGE_START);
+    finishDate.setDate(finishDate.getDate() + 59 + missedDays);
+    const canFinish = finishDate <= DEADLINE;
+    const finishStr = canFinish
+      ? finishDate.toLocaleDateString("en-US",{month:"short",day:"numeric"})
+      : "Out of time";
+
+    // Days remaining until their finish line
+    const daysLeft = Math.max(0, Math.ceil((finishDate - today) / 86400000));
+
+    return { missedDays, perfectDays, checkedInToday, finishDate, finishStr, canFinish, daysLeft };
+  }
+
+  // Sort: can-finish first sorted by finish date asc, then out-of-time
+  const ranked = [...players].map(p=>({...p,...getStats(p.id)}))
+    .sort((a,b)=>{
+      if(a.canFinish && !b.canFinish) return -1;
+      if(!a.canFinish && b.canFinish) return 1;
+      if(a.canFinish && b.canFinish) return a.finishDate - b.finishDate;
+      return b.perfectDays - a.perfectDays;
+    });
+
+  const todayStr = today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
+
+  return (
+    <div style={{minHeight:"100vh",background:"#0b0b0b",paddingBottom:60}}>
+
+      {/* Header */}
+      <div style={{
+        background:"linear-gradient(180deg,rgba(201,168,76,0.1) 0%,transparent 100%)",
+        borderBottom:"1px solid var(--border)",
+        padding:"24px 16px 20px",
+        textAlign:"center",
+        position:"relative"
+      }}>
+        {onBack && <button className="btn" onClick={onBack} style={{position:"absolute",top:16,left:16,fontSize:9}}>← Back</button>}
+        <button className="btn" onClick={refresh} style={{position:"absolute",top:16,right:16,fontSize:9}}>
+          {refreshing?<span className="spinner"/>:"↻"}
+        </button>
+        <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(36px,10vw,64px)",letterSpacing:"0.06em",lineHeight:1,color:"var(--gold)"}}>
+          POLE POSITION
+        </div>
+        <div style={{fontFamily:"var(--mono)",fontSize:10,color:"#555",letterSpacing:"0.2em",marginTop:4}}>
+          SIXTY DAYS TO CONFIDENCE  ·  {todayStr.toUpperCase()}
+        </div>
+        <div style={{fontFamily:"var(--mono)",fontSize:9,color:"#444",marginTop:4,letterSpacing:"0.12em"}}>
+          JULY 1 – SEPTEMBER 1, 2026  ·  60 PERFECT DAYS  ·  {ranked.filter(p=>p.canFinish).length} STILL IN IT
+        </div>
+      </div>
+
+      {loading
+        ? <div style={{textAlign:"center",padding:"60px 0",fontFamily:"var(--mono)",fontSize:11,color:"#444"}}><span className="spinner"/>Loading standings...</div>
+        : <div style={{maxWidth:700,margin:"0 auto",padding:"16px 12px"}}>
+
+          {/* Column headers */}
+          <div style={{display:"grid",gridTemplateColumns:"36px 1fr 130px 110px 80px",gap:2,marginBottom:4}}>
+            {["#","NAME & PHONE","FINISH DATE","PERFECT DAYS","TODAY"].map((h,i)=>(
+              <div key={i} style={{fontFamily:"var(--mono)",fontSize:8,color:"#444",letterSpacing:"0.15em",textTransform:"uppercase",padding:"4px 6px"}}>
+                {h}
+              </div>
+            ))}
           </div>
+
+          {/* Player rows */}
+          {ranked.map((p,idx)=>{
+            const pos = idx+1;
+            const posColor = pos===1?"var(--gold)":pos===2?"#aaa":pos===3?"#a0704a":"#444";
+            const rowBg = !p.canFinish
+              ? "rgba(139,32,32,0.06)"
+              : p.checkedInToday
+              ? "rgba(74,140,97,0.05)"
+              : "rgba(255,255,255,0.02)";
+            const rowBorder = !p.canFinish
+              ? "rgba(139,32,32,0.2)"
+              : p.checkedInToday
+              ? "rgba(74,140,97,0.25)"
+              : "rgba(255,255,255,0.05)";
+
+            return (
+              <div key={p.id} style={{
+                display:"grid",
+                gridTemplateColumns:"36px 1fr 130px 110px 80px",
+                gap:2,
+                background:rowBg,
+                border:`1px solid ${rowBorder}`,
+                borderRadius:4,
+                marginBottom:3,
+                alignItems:"center",
+                opacity: p.canFinish ? 1 : 0.6,
+              }}>
+                {/* Position */}
+                <div style={{textAlign:"center",padding:"14px 0"}}>
+                  <div style={{fontFamily:"var(--bebas)",fontSize:22,color:posColor,lineHeight:1}}>
+                    {p.canFinish ? pos : "—"}
+                  </div>
+                </div>
+
+                {/* Name + phone */}
+                <div style={{padding:"10px 8px"}}>
+                  <div style={{fontFamily:"var(--bebas)",fontSize:20,letterSpacing:"0.04em",lineHeight:1,color:p.canFinish?"#f0ede6":"#666"}}>
+                    {p.name}
+                  </div>
+                  <div style={{fontFamily:"var(--mono)",fontSize:10,color:"#555",marginTop:3,letterSpacing:"0.05em"}}>
+                    {p.phone || "—"}
+                  </div>
+                  {p.missedDays>0&&(
+                    <div style={{fontFamily:"var(--mono)",fontSize:8,color:p.missedDays>=3?"#e05c5c":"#c9a84c",marginTop:2}}>
+                      {p.missedDays} miss{p.missedDays>1?"es":""} used
+                    </div>
+                  )}
+                </div>
+
+                {/* Earliest finish date */}
+                <div style={{padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{
+                    fontFamily:"var(--bebas)",fontSize:18,lineHeight:1,letterSpacing:"0.04em",
+                    color: !p.canFinish?"#e05c5c":p.finishDate<=new Date("2026-08-29")?"var(--gold)":"#f0ede6"
+                  }}>
+                    {p.finishStr}
+                  </div>
+                  {p.canFinish&&(
+                    <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444",marginTop:2}}>
+                      {p.daysLeft} day{p.daysLeft!==1?"s":""} away
+                    </div>
+                  )}
+                </div>
+
+                {/* Perfect days */}
+                <div style={{padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{fontFamily:"var(--bebas)",fontSize:22,color:"var(--gold)",lineHeight:1}}>{p.perfectDays}</div>
+                  <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#444"}}>/ 60 days</div>
+                </div>
+
+                {/* Checked in today */}
+                <div style={{padding:"10px 8px",textAlign:"center"}}>
+                  <div style={{fontSize:16}}>{p.checkedInToday?"✅":"⬜"}</div>
+                  <div style={{fontFamily:"var(--mono)",fontSize:7,color:p.checkedInToday?"#4a8c61":"#444",marginTop:2}}>
+                    {p.checkedInToday?"done":"pending"}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {ranked.filter(p=>!p.canFinish).length > 0 && (
+            <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444",textAlign:"center",marginTop:12,letterSpacing:"0.15em"}}>
+              GRAYED OUT = PAST THE SEPTEMBER 1 DEADLINE
+            </div>
+          )}
+        </div>
       }
     </div>
   );
@@ -710,10 +1201,11 @@ function App(){
   function handleSetupSave(p){ setProfile(p); setScreen("tracker"); }
   function handleSignOut(){ setProfile(null); setScreen("auth"); }
 
-  if(screen==="auth")      return <AuthScreen onAuth={handleAuth}/>;
+  if(screen==="pole")      return <PolePositionScreen onBack={()=>setScreen("auth")}/>;
+  if(screen==="auth")      return <AuthScreen onAuth={handleAuth} onAdminLogin={()=>setScreen("dashboard")}  onPolePosition={()=>setScreen("pole")}/>; 
   if(screen==="setup")     return <SetupScreen profile={profile} onSave={handleSetupSave}/>;
   if(screen==="dashboard") return <DashboardScreen onBack={()=>setScreen("tracker")}/>;
-  return <TrackerScreen profile={profile} onEditProfile={()=>setScreen("setup")} onSignOut={handleSignOut} onDashboard={()=>setScreen("dashboard")}/>;
+  return <TrackerScreen profile={profile} onEditProfile={()=>setScreen("setup")} onSignOut={handleSignOut} onDashboard={()=>setScreen("dashboard")} onPolePosition={()=>setScreen("pole")}/>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
