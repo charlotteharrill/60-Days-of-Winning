@@ -1250,8 +1250,9 @@ function PolePositionScreen({onBack}){
 // ROOT
 // ══════════════════════════════════════════
 function App(){
-  const [screen,setScreen] = useState("loading");
-  const [profile,setProfile] = useState(null);
+  const [screen,setScreen]     = useState("loading");
+  const [prevScreen,setPrevScreen] = useState("auth");
+  const [profile,setProfile]   = useState(null);
 
   // Auto-login on mount
   useEffect(()=>{
@@ -1297,11 +1298,11 @@ function App(){
       </div>
     </div>
   );
-  if(screen==="pole")      return <PolePositionScreen onBack={()=>setScreen("auth")}/>;
-  if(screen==="auth")      return <AuthScreen onAuth={handleAuth} onAdminLogin={()=>setScreen("dashboard")}  onPolePosition={()=>setScreen("pole")}/>; 
+  if(screen==="pole")      return <PolePositionScreen onBack={()=>setScreen(prevScreen||"auth")}/>;
+  if(screen==="auth")      return <AuthScreen onAuth={handleAuth} onAdminLogin={()=>setScreen("dashboard")}  onPolePosition={()=>{setPrevScreen("auth");setScreen("pole");}}/>; 
   if(screen==="setup")     return <SetupScreen profile={profile} onSave={handleSetupSave}/>;
   if(screen==="dashboard") return <DashboardScreen onBack={()=>setScreen("auth")}/>;
-  return <TrackerScreen profile={profile} onEditProfile={()=>setScreen("setup")} onSignOut={handleSignOut} onDashboard={()=>setScreen("dashboard")} onPolePosition={()=>setScreen("pole")}/>;
+  return <TrackerScreen profile={profile} onEditProfile={()=>setScreen("setup")} onSignOut={handleSignOut} onDashboard={()=>setScreen("dashboard")} onPolePosition={()=>{setPrevScreen("auth");setScreen("pole");}}/>;
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
