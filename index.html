@@ -231,6 +231,14 @@ function AuthScreen({onAuth, onAdminLogin, onPolePosition}){
           </button>
         )}
       </div>
+    
+      <div style={{
+        width:"100%", padding:"16px 0 8px",
+        textAlign:"center", marginTop:"auto"
+      }}>
+        <img src="https://raw.githubusercontent.com/charlotteharrill/sixty-days-confidence/main/60%20days%20graphic.png" alt="60 Days of Winning"
+          style={{width:"100%", maxWidth:700, opacity:0.85}}/>
+      </div>
     </div>
   );
 }
@@ -496,7 +504,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
   const dietLabel     = DIET_OPTIONS.find(o=>o.id===profile.diet)?.label||"Not set";
   const exLabel       = EXERCISE_OPTIONS.find(o=>o.id===profile.exercise)?.label||"Not set";
   const finLabel      = FINANCIAL_OPTIONS.find(o=>o.id===profile.financial)?.label||"Not set";
-  const morningPicks  = (Array.isArray(profile.morning_choices)?profile.morning_choices:[]).map(id=>MORNING_OPTIONS.find(o=>o.id===id)?.label).filter(Boolean);
+  const morningPicks  = (()=>{ try { const mc=Array.isArray(profile.morning_choices)?profile.morning_choices:JSON.parse(profile.morning_choices||"[]"); return mc.map(id=>MORNING_OPTIONS.find(o=>o.id===id)?.label).filter(Boolean); } catch(e){ return []; }})();
 
   const wkEnd=new Date(weekStart); wkEnd.setDate(wkEnd.getDate()+6);
   const weekTitle=offset===0?"This Week":offset===-1?"Last Week":Math.abs(offset)+" Weeks Ago";
@@ -727,6 +735,14 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
             </div>
           </div>
       }
+    
+      <div style={{
+        width:"100%", padding:"16px 0 8px",
+        textAlign:"center", marginTop:"auto"
+      }}>
+        <img src="https://raw.githubusercontent.com/charlotteharrill/sixty-days-confidence/main/60%20days%20graphic.png" alt="60 Days of Winning"
+          style={{width:"100%", maxWidth:700, opacity:0.85}}/>
+      </div>
     </div>
   );
 }
@@ -934,7 +950,7 @@ function DashboardScreen({onBack}){
                       {[
                         {icon:"🥗",label:"Diet",val:dietLabel(p.diet),note:p.diet_note},
                         {icon:"💧",label:"Water",val:waterLabel(p.water),note:p.water_note},
-                        {icon:"🧠",label:"Miracle Morning",val:(Array.isArray(p.morning_choices)?p.morning_choices:(JSON.parse(p.morning_choices||"[]"))).length+" practices chosen",note:p.morning_note},
+                        {icon:"🧠",label:"Miracle Morning",val:(()=>{ try { const mc = Array.isArray(p.morning_choices)?p.morning_choices:JSON.parse(p.morning_choices||"[]"); return mc.length+" practices chosen"; } catch(e){ return "0 practices chosen"; }})(),note:p.morning_note},
                         {icon:"💪",label:"Exercise",val:exLabel(p.exercise),note:p.exercise_note},
                         {icon:"💰",label:"Financial",val:finLabel(p.financial),note:p.financial_note},
                       ].map((r,i)=>(
@@ -1218,6 +1234,14 @@ function PolePositionScreen({onBack}){
           )}
         </div>
       }
+    
+      <div style={{
+        width:"100%", padding:"16px 0 8px",
+        textAlign:"center", marginTop:"auto"
+      }}>
+        <img src="https://raw.githubusercontent.com/charlotteharrill/sixty-days-confidence/main/60%20days%20graphic.png" alt="60 Days of Winning"
+          style={{width:"100%", maxWidth:700, opacity:0.85}}/>
+      </div>
     </div>
   );
 }
