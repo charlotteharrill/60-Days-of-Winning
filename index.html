@@ -319,7 +319,7 @@ function SetupScreen({profile, onSave}){
         <CommitNote
           value={form.water_note}
           onChange={v=>set("water_note",v)}
-          placeholder={`e.g. I will drink ${form.water==="half"?"64 oz":form.water==="hundred"?"100 oz":"128 oz (1 gallon)"} of water every day. I will use a marked water bottle to track it.`}
+          placeholder={"e.g. I will drink "+(form.water==="half"?"64 oz":form.water==="hundred"?"100 oz":"128 oz (1 gallon)")+" of water every day. I will use a marked water bottle to track it."}
         />
       )}
 
@@ -330,7 +330,7 @@ function SetupScreen({profile, onSave}){
         <div style={{fontSize:13,color:"#888",lineHeight:1.6}}>These are the practices you commit to doing every single morning before your day starts. Pick the ones that will genuinely change you. Once chosen — this is your Miracle Morning for 60 days.</div>
       </div>
       <div style={{fontFamily:"var(--mono)",fontSize:9,color:mc.length>=3?"#4a8c61":"#555",marginBottom:10,letterSpacing:"0.1em"}}>
-        {mc.length}/5 selected {mc.length>=3?"✓ minimum met":mc.length===0?"— pick at least 3":`— need ${3-mc.length} more`}
+        {mc.length}/5 selected {mc.length>=3?"✓ minimum met":mc.length===0?"— pick at least 3":"— need "+(3-mc.length)+" more"}
       </div>
       {MORNING_OPTIONS.map(o=>(
         <MultiCard key={o.id} option={o} selected={mc.includes(o.id)} onToggle={()=>toggleMorning(o.id)}/>
@@ -498,7 +498,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
   const morningPicks  = (Array.isArray(profile.morning_choices)?profile.morning_choices:[]).map(id=>MORNING_OPTIONS.find(o=>o.id===id)?.label).filter(Boolean);
 
   const wkEnd=new Date(weekStart); wkEnd.setDate(wkEnd.getDate()+6);
-  const weekTitle=offset===0?"This Week":offset===-1?"Last Week":`${Math.abs(offset)} Weeks Ago`;
+  const weekTitle=offset===0?"This Week":offset===-1?"Last Week":Math.abs(offset)+" Weeks Ago";
 
   return (
     <div style={{minHeight:"100vh",paddingBottom:60}}>
@@ -529,7 +529,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
               marginTop:8,
               padding:"6px 14px",
               background: isPast ? "rgba(192,57,43,0.15)" : "rgba(201,168,76,0.08)",
-              border: `1px solid ${isPast ? "#c0392b" : "rgba(201,168,76,0.3)"}`,
+              border: "1px solid "+(isPast ? "#c0392b" : "rgba(201,168,76,0.3)"),
               borderRadius:3,
             }}>
               <div style={{fontFamily:"var(--mono)",fontSize:8,color:isPast?"#e05c5c":"#666",letterSpacing:"0.15em",textTransform:"uppercase",marginBottom:2}}>
@@ -539,7 +539,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
                 {isPast ? "Not able to complete in time" : finishStr}
               </div>
               {!isPast && <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#555",marginTop:2}}>
-                {missesUsed === 0 ? "No misses used" : `${missesUsed} miss${missesUsed>1?"es":""} used`}
+                {missesUsed === 0 ? "No misses used" : missesUsed+" miss"+(missesUsed>1?"es":"")+" used"}
               </div>}
             </div>
           );
@@ -554,7 +554,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
             {[
               {icon:"🥗",label:"Diet",       val:dietLabel,     note:profile.diet_note},
               {icon:"💧",label:"Water",      val:waterLabel,    note:profile.water_note},
-              {icon:"🧠",label:"Miracle Morning", val:`${morningPicks.length} practices`, note:morningPicks.join(" · ")},
+              {icon:"🧠",label:"Miracle Morning", val:morningPicks.length+" practices", note:morningPicks.join(" · ")},
               {icon:"💪",label:"Exercise",   val:exLabel,       note:profile.exercise_note},
               {icon:"💰",label:"Financial",  val:finLabel,      note:profile.financial_note},
             ].map((r,i)=>(
