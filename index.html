@@ -507,7 +507,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
       <div style={{background:"linear-gradient(180deg,rgba(201,168,76,0.08) 0%,transparent 100%)",borderBottom:"1px solid var(--border)",padding:"20px 16px",textAlign:"center",position:"relative"}}>
         <button className="btn" onClick={onSignOut} style={{position:"absolute",top:16,left:16,fontSize:9}}>Sign Out</button>
         <div style={{position:"absolute",top:16,right:16,display:"flex",flexDirection:"column",gap:6,alignItems:"flex-end"}}>
-          <button className="btn" onClick={onEditProfile} style={{fontSize:9}}>Edit Setup</button>
+          {new Date() < new Date("2026-07-01T00:00:00") && <button className="btn" onClick={onEditProfile} style={{fontSize:9}}>Edit Setup</button>}
           <button className="btn" onClick={onPolePosition} style={{fontSize:9}}>🏁 Pole Position</button>
           {profile.passcode==="charlotte2025"&&<button className="btn" onClick={onDashboard} style={{fontSize:9}}>Dashboard</button>}
         </div>
