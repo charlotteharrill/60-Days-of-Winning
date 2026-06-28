@@ -948,17 +948,14 @@ function DashboardScreen({onBack}){
 
                     {/* Miss status */}
                     <div style={{marginTop:12,display:"flex",gap:8}}>
-                      {["Miss 1
-(Free)","Miss 2
-($25)","Miss 3
-($25)"].map((lbl,i)=>{
+                      {["Miss 1 (Free)","Miss 2 ($25)","Miss 3 ($25)"].map((lbl,i)=>{
                         const used=missed>i;
                         return(
                           <div key={i} style={{flex:1,textAlign:"center",padding:"8px 4px",
                             background:used?"rgba(192,57,43,0.15)":"rgba(255,255,255,0.02)",
                             border:`1px solid ${used?"#c0392b":"rgba(255,255,255,0.06)"}`,borderRadius:3}}>
                             <div style={{fontSize:14}}>{used?"✕":"○"}</div>
-                            <div style={{fontFamily:"var(--mono)",fontSize:7,color:used?"#e05c5c":"#444",marginTop:2,whiteSpace:"pre-line"}}>{lbl}</div>
+                            <div style={{fontFamily:"var(--mono)",fontSize:7,color:used?"#e05c5c":"#444",marginTop:2}}>{lbl}</div>
                           </div>
                         );
                       })}
