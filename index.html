@@ -634,7 +634,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
                   const textC   = onTime ? h.color : late ? "#555" : "#222";
                   return (
                     <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,h.id)}
-                      style={{padding:"7px 2px",fontSize:12,background:bg,border:"1px solid "+(borderC)+"",color:textC,position:"relative"}}>
+                      style={{padding:"7px 2px",fontSize:12,background:bg,border:"1px solid "+(borderC),color:textC,position:"relative"}}>
                       {checked ? "✓" : "·"}
                       {late && <span style={{position:"absolute",top:1,right:2,fontSize:6,color:"#666",fontFamily:"var(--mono)"}}>LATE</span>}
                     </button>
@@ -658,7 +658,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
                 const eb = late ? "rgba(100,100,100,0.1)" : ex==="HIGH" ? "rgba(224,92,92,0.15)" : ex==="LOW" ? "rgba(74,140,97,0.15)" : "rgba(255,255,255,0.02)";
                 return (
                   <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,"exercise")}
-                    style={{padding:"7px 2px",fontSize:10,fontWeight:600,background:eb,border:"1px solid "+(ex?ec:"rgba(255,255,255,0.05)")+"",color:ec,position:"relative"}}>
+                    style={{padding:"7px 2px",fontSize:10,fontWeight:600,background:eb,border:"1px solid "+(ex?ec:"rgba(255,255,255,0.05)"),color:ec,position:"relative"}}>
                     {ex||"·"}
                     {late && <span style={{position:"absolute",top:1,right:2,fontSize:6,color:"#666",fontFamily:"var(--mono)"}}>LATE</span>}
                   </button>
@@ -701,7 +701,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
                 const day=get(d),future=d>today;
                 return (
                   <button key={i} className="cell" disabled={future} onClick={()=>toggle(d,"missed")}
-                    style={{padding:"7px 2px",fontSize:12,fontWeight:day.missed?700:400,background:day.missed?"rgba(192,57,43,0.18)":"rgba(255,255,255,0.02)",border:"1px solid "+(day.missed?"var(--red)":"rgba(255,255,255,0.05)")+"",color:day.missed?"#e05c5c":"#111"}}>
+                    style={{padding:"7px 2px",fontSize:12,fontWeight:day.missed?700:400,background:day.missed?"rgba(192,57,43,0.18)":"rgba(255,255,255,0.02)",border:"1px solid "+(day.missed?"var(--red)":"rgba(255,255,255,0.05)"),color:day.missed?"#e05c5c":"#111"}}>
                     {day.missed?"✕":"·"}
                   </button>
                 );
@@ -713,7 +713,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
               <div style={{display:"flex",gap:14,flexWrap:"wrap",marginBottom:8}}>
                 {[["HIGH","#e05c5c","rgba(224,92,92,0.15)","High Intensity"],["LOW","#4a8c61","rgba(74,140,97,0.15)","Active Recovery"]].map(([l,c,b,d])=>(
                   <div key={l} style={{display:"flex",alignItems:"center",gap:6}}>
-                    <div style={{padding:"2px 7px",background:b,border:"1px solid "+(c)+"",borderRadius:3,fontFamily:"var(--mono)",fontSize:9,color:c,fontWeight:600}}>{l}</div>
+                    <div style={{padding:"2px 7px",background:b,border:"1px solid "+c,borderRadius:3,fontFamily:"var(--mono)",fontSize:9,color:c,fontWeight:600}}>{l}</div>
                     <span style={{fontSize:11,color:"#555"}}>{d}</span>
                   </div>
                 ))}
@@ -857,7 +857,7 @@ function DashboardScreen({onBack}){
             const missColor = missed===0?"#333":missed>=3?"#e05c5c":"#c9a84c";
             const challengeDay = p.start_date ? Math.floor((today-new Date(p.start_date+"T00:00:00"))/86400000)+1 : null;
             return (
-              <div key={p.id} style={{background:"rgba(255,255,255,0.02)",border:"1px solid "+(checkedIn?"rgba(74,140,97,0.35)":missed>=3?"rgba(224,92,92,0.3)":"rgba(255,255,255,0.05)")+"",borderRadius:6,marginBottom:4,overflow:"hidden"}}>
+              <div key={p.id} style={{background:"rgba(255,255,255,0.02)",border:"1px solid "+(checkedIn?"rgba(74,140,97,0.35)":missed>=3?"rgba(224,92,92,0.3)":"rgba(255,255,255,0.05)"),borderRadius:6,marginBottom:4,overflow:"hidden"}}>
                 {/* Main row */}
                 <div style={{display:"flex",alignItems:"center",gap:12,padding:"14px 16px",cursor:"pointer"}}
                   onClick={()=>setExpanded(isExp?null:p.id)}>
@@ -867,7 +867,7 @@ function DashboardScreen({onBack}){
                       <div style={{fontFamily:"var(--bebas)",fontSize:20,letterSpacing:"0.04em",lineHeight:1}}>{p.name}</div>
                       <div style={{fontFamily:"var(--mono)",fontSize:8,padding:"3px 8px",borderRadius:2,
                         background:checkedIn?"rgba(74,140,97,0.15)":"rgba(192,57,43,0.1)",
-                        border:"1px solid "+(checkedIn?"#4a8c61":"rgba(192,57,43,0.3)")+"",
+                        border:"1px solid "+(checkedIn?"#4a8c61":"rgba(192,57,43,0.3)"),
                         color:checkedIn?"#6dbf8a":"#666"}}>
                         {checkedIn?"✓ IN TODAY":"NOT YET"}
                       </div>
@@ -911,7 +911,7 @@ function DashboardScreen({onBack}){
                         return(
                           <div key={h.id} style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",
                             background:done?"rgba(74,140,97,0.12)":"rgba(255,255,255,0.02)",
-                            border:"1px solid "+(done?"#4a8c61":"rgba(255,255,255,0.06)")+"",borderRadius:3}}>
+                            border:"1px solid "+(done?"#4a8c61":"rgba(255,255,255,0.06)"),borderRadius:3}}>
                             <span style={{fontSize:12}}>{h.icon}</span>
                             <span style={{fontFamily:"var(--mono)",fontSize:9,color:done?"#6dbf8a":"#444"}}>{done?"✓":"-"} {h.label}</span>
                           </div>
@@ -919,7 +919,7 @@ function DashboardScreen({onBack}){
                       })}
                       <div style={{display:"flex",alignItems:"center",gap:4,padding:"4px 10px",
                         background:todayRec.exercise?"rgba(224,92,92,0.1)":"rgba(255,255,255,0.02)",
-                        border:"1px solid "+(todayRec.exercise?"#e05c5c":"rgba(255,255,255,0.06)")+"",borderRadius:3}}>
+                        border:"1px solid "+(todayRec.exercise?"#e05c5c":"rgba(255,255,255,0.06)"),borderRadius:3}}>
                         <span style={{fontSize:12}}>💪</span>
                         <span style={{fontFamily:"var(--mono)",fontSize:9,color:todayRec.exercise?"#e05c5c":"#444"}}>
                           {todayRec.exercise||"-"} Exercise
@@ -975,7 +975,7 @@ function DashboardScreen({onBack}){
                         return(
                           <div key={i} style={{flex:1,textAlign:"center",padding:"8px 4px",
                             background:used?"rgba(192,57,43,0.15)":"rgba(255,255,255,0.02)",
-                            border:"1px solid "+(used?"#c0392b":"rgba(255,255,255,0.06)")+"borderRadius:3}}>
+                            border:"1px solid "+(used?"#c0392b":"rgba(255,255,255,0.06)"),borderRadius:3}}>
                             <div style={{fontSize:14}}>{used?"✕":"○"}</div>
                             <div style={{fontFamily:"var(--mono)",fontSize:7,color:used?"#e05c5c":"#444",marginTop:2}}>{lbl}</div>
                           </div>
@@ -983,7 +983,7 @@ function DashboardScreen({onBack}){
                       })}
                       <div style={{flex:1,textAlign:"center",padding:"8px 4px",
                         background:missed>=4?"rgba(192,57,43,0.3)":"rgba(255,255,255,0.02)",
-                        border:"1px solid "+(missed>=4?"#c0392b":"rgba(255,255,255,0.06)")+"",borderRadius:3}}>
+                        border:"1px solid "+(missed>=4?"#c0392b":"rgba(255,255,255,0.06)"),borderRadius:3}}>
                         <div style={{fontSize:14}}>{missed>=4?"❌":"—"}</div>
                         <div style={{fontFamily:"var(--mono)",fontSize:7,color:missed>=4?"#e05c5c":"#444",marginTop:2}}>{"Miss 4 (Out)"}</div>
                       </div>
@@ -1153,7 +1153,7 @@ function PolePositionScreen({onBack}){
                 gridTemplateColumns:"36px 1fr 130px 110px 80px",
                 gap:2,
                 background:rowBg,
-                border:"1px solid "+(rowBorder)+"",
+                border:"1px solid "+(rowBorder),
                 borderRadius:4,
                 marginBottom:3,
                 alignItems:"center",
