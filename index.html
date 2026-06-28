@@ -843,9 +843,10 @@ function DashboardScreen({onBack, onPolePosition}){
             {today.toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric",year:"numeric"}).toUpperCase()}
           </div>
         </div>
-        <button className="btn" onClick={refresh} style={{fontSize:9}}>
-          {refreshing?<span className="spinner"/>:"↻ Refresh"}
-        </button>
+        <div style={{display:"flex",gap:6}}>
+          <button className="btn" onClick={onPolePosition} style={{fontSize:9}}>🏁 Standings</button>
+          <button className="btn" onClick={refresh} style={{fontSize:9}}>{refreshing?<span className="spinner"/>:"↻"}</button>
+        </div>
       </div>
 
       {loading
@@ -1119,10 +1120,9 @@ function PolePositionScreen({onBack}){
         position:"relative"
       }}>
         {onBack && <button className="btn" onClick={onBack} style={{position:"absolute",top:16,left:16,fontSize:9}}>← Back</button>}
-        <div style={{position:"absolute",top:16,right:16,display:"flex",gap:6}}>
-          <button className="btn" onClick={onPolePosition} style={{fontSize:9}}>🏁 Standings</button>
-          <button className="btn" onClick={refresh} style={{fontSize:9}}>{refreshing?<span className="spinner"/>:"↻"}</button>
-        </div>
+        <button className="btn" onClick={refresh} style={{position:"absolute",top:16,right:16,fontSize:9}}>
+          {refreshing?<span className="spinner"/>:"↻ Refresh"}
+        </button>
         <div style={{fontFamily:"var(--bebas)",fontSize:"clamp(36px,10vw,64px)",letterSpacing:"0.06em",lineHeight:1,color:"var(--gold)"}}>
           POLE POSITION
         </div>
