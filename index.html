@@ -741,7 +741,7 @@ function DashboardScreen({onBack}){
   const [expanded,setExpanded]   = useState(null);
 
   async function loadData(){
-    const {data:p} = await sb.from("profiles").select("*").order("name");
+    const {data:p} = await sb.from("profiles").select("*").order("name");  // includes all note fields
     const {data:c} = await sb.from("checkins").select("*");
     setProfiles(p||[]); setCheckins(c||[]);
   }
@@ -928,20 +928,42 @@ function DashboardScreen({onBack}){
                     </div>
 
                     {/* Commitments */}
-                    <div style={{fontFamily:"var(--mono)",fontSize:8,color:"var(--gold)",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:8}}>Their Commitments</div>
-                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 16px"}}>
+                    <div style={{fontFamily:"var(--mono)",fontSize:8,color:"var(--gold)",letterSpacing:"0.2em",textTransform:"uppercase",marginBottom:10}}>Their Commitments</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:8}}>
                       {[
-                        {icon:"🥗",label:"Diet",val:dietLabel(p.diet)},
-                        {icon:"💧",label:"Water",val:waterLabel(p.water)},
-                        {icon:"💪",label:"Exercise",val:exLabel(p.exercise)},
-                        {icon:"💰",label:"Financial",val:finLabel(p.financial)},
+                        {icon:"🥗",label:"Diet",val:dietLabel(p.diet),note:p.diet_note},
+                        {icon:"💧",label:"Water",val:waterLabel(p.water),note:p.water_note},
+                        {icon:"🧠",label:"Miracle Morning",val:`${(Array.isArray(p.morning_choices)?p.morning_choices:JSON.parse(p.morning_choices||"[]")).length} practices chosen`,note:p.morning_note},
+                        {icon:"💪",label:"Exercise",val:exLabel(p.exercise),note:p.exercise_note},
+                        {icon:"💰",label:"Financial",val:finLabel(p.financial),note:p.financial_note},
                       ].map((r,i)=>(
-                        <div key={i} style={{display:"flex",gap:6,alignItems:"flex-start"}}>
-                          <span style={{fontSize:11,flexShrink:0}}>{r.icon}</span>
-                          <div>
-                            <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#444",textTransform:"uppercase"}}>{r.label}</div>
-                            <div style={{fontSize:11,color:"#bbb"}}>{r.val}</div>
+                        <div key={i} style={{
+                          background:"rgba(255,255,255,0.02)",
+                          border:"1px solid rgba(255,255,255,0.05)",
+                          borderRadius:4,
+                          padding:"10px 12px",
+                        }}>
+                          <div style={{display:"flex",gap:6,alignItems:"center",marginBottom:r.note?4:0}}>
+                            <span style={{fontSize:12,flexShrink:0}}>{r.icon}</span>
+                            <div style={{flex:1}}>
+                              <div style={{fontFamily:"var(--mono)",fontSize:7,color:"#555",textTransform:"uppercase",letterSpacing:"0.12em"}}>{r.label}</div>
+                              <div style={{fontSize:12,color:"#ddd",fontWeight:500}}>{r.val||"—"}</div>
+                            </div>
                           </div>
+                          {r.note&&(
+                            <div style={{
+                              fontFamily:"'DM Sans',sans-serif",
+                              fontSize:11,
+                              color:"#888",
+                              fontStyle:"italic",
+                              paddingLeft:18,
+                              lineHeight:1.5,
+                              borderLeft:"2px solid rgba(201,168,76,0.2)",
+                              marginLeft:4,
+                            }}>
+                              {r.note}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -964,6 +986,28 @@ function DashboardScreen({onBack}){
                         border:`1px solid ${missed>=4?"#c0392b":"rgba(255,255,255,0.06)"}`,borderRadius:3}}>
                         <div style={{fontSize:14}}>{missed>=4?"❌":"—"}</div>
                         <div style={{fontFamily:"var(--mono)",fontSize:7,color:missed>=4?"#e05c5c":"#444",marginTop:2}}>{"Miss 4 (Out)"}</div>
+                      </div>
+                    {/* Delete button */}
+                    <div style={{marginTop:16,paddingTop:12,borderTop:"1px solid rgba(255,255,255,0.05)"}}>
+                      <button
+                        onClick={e=>{e.stopPropagation();deleteAccount(p.id,p.name);}}
+                        style={{
+                          background:"rgba(139,32,32,0.1)",
+                          border:"1px solid rgba(139,32,32,0.4)",
+                          color:"#e05c5c",
+                          padding:"10px 16px",
+                          fontFamily:"var(--mono)",
+                          fontSize:9,
+                          letterSpacing:"0.15em",
+                          textTransform:"uppercase",
+                          cursor:"pointer",
+                          borderRadius:2,
+                          width:"100%",
+                        }}>
+                        Delete {p.name}'s Account &amp; All Check-In Data
+                      </button>
+                      <div style={{fontFamily:"var(--mono)",fontSize:8,color:"#444",marginTop:6,textAlign:"center"}}>
+                        Permanently removes profile and all tracking data — cannot be undone
                       </div>
                     </div>
                   </div>
@@ -991,7 +1035,7 @@ function PolePositionScreen({onBack}){
   const today           = new Date(); today.setHours(0,0,0,0);
 
   async function loadData(){
-    const {data:p} = await sb.from("profiles").select("id,name,phone,start_date,diet,exercise,financial").order("name");
+    const {data:p} = await sb.from("profiles").select("id,name,phone,start_date,diet,diet_note,water,water_note,morning_choices,morning_note,exercise,exercise_note,financial,financial_note").order("name");
     const {data:c} = await sb.from("checkins").select("profile_id,date,missed,diet,water,morning,money,exercise,diet_ts,water_ts,morning_ts,money_ts,exercise_ts");
     setPlayers(p||[]); setCheckins(c||[]);
   }
