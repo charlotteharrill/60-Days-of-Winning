@@ -973,20 +973,17 @@ function DashboardScreen({onBack}){
                       {["Miss 1 (Free)","Miss 2 ($25)","Miss 3 ($25)"].map((lbl,i)=>{
                         const used=missed>i;
                         return(
-                          <div key={i} style={{flex:1,textAlign:"center",padding:"8px 4px",
-                            background:used?"rgba(192,57,43,0.15)":"rgba(255,255,255,0.02)",
-                            border:"1px solid "+(used?"#c0392b":"rgba(255,255,255,0.06)"),borderRadius:3}}>
-                            <div style={{fontSize:14}}>{used?"✕":"○"}</div>
+                          <div key={i} style={{flex:1,textAlign:"center",padding:"8px 4px",background:used?"rgba(192,57,43,0.15)":"rgba(255,255,255,0.02)",border:"1px solid "+(used?"#c0392b":"rgba(255,255,255,0.06)"),borderRadius:3}}>
+                            <div style={{fontSize:14}}>{used?"X":"O"}</div>
                             <div style={{fontFamily:"var(--mono)",fontSize:7,color:used?"#e05c5c":"#444",marginTop:2}}>{lbl}</div>
                           </div>
                         );
                       })}
-                      <div style={{flex:1,textAlign:"center",padding:"8px 4px",
-                        background:missed>=4?"rgba(192,57,43,0.3)":"rgba(255,255,255,0.02)",
-                        border:"1px solid "+(missed>=4?"#c0392b":"rgba(255,255,255,0.06)"),borderRadius:3}}>
-                        <div style={{fontSize:14}}>{missed>=4?"❌":"—"}</div>
+                      <div style={{flex:1,textAlign:"center",padding:"8px 4px",background:missed>=4?"rgba(192,57,43,0.3)":"rgba(255,255,255,0.02)",border:"1px solid "+(missed>=4?"#c0392b":"rgba(255,255,255,0.06)"),borderRadius:3}}>
+                        <div style={{fontSize:14}}>{missed>=4?"X":"--"}</div>
                         <div style={{fontFamily:"var(--mono)",fontSize:7,color:missed>=4?"#e05c5c":"#444",marginTop:2}}>{"Miss 4 (Out)"}</div>
                       </div>
+                    </div>
                     {/* Delete button */}
                     <div style={{marginTop:16,paddingTop:12,borderTop:"1px solid rgba(255,255,255,0.05)"}}>
                       <button
