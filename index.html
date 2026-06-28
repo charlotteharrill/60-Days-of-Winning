@@ -383,6 +383,7 @@ function TrackerScreen({profile, onEditProfile, onSignOut, onDashboard, onPolePo
   const [saving,setSaving]       = useState(false);
   const [allCheckins,setAll]     = useState([]);
 
+  if(!profile) return null;
   const startDate = profile.start_date ? new Date(profile.start_date+"T00:00:00") : null;
   const today     = new Date(); today.setHours(0,0,0,0);
   const weekStart = getWeekStart(offset);
@@ -1241,7 +1242,7 @@ function App(){
   if(screen==="pole")      return <PolePositionScreen onBack={()=>setScreen("auth")}/>;
   if(screen==="auth")      return <AuthScreen onAuth={handleAuth} onAdminLogin={()=>setScreen("dashboard")}  onPolePosition={()=>setScreen("pole")}/>; 
   if(screen==="setup")     return <SetupScreen profile={profile} onSave={handleSetupSave}/>;
-  if(screen==="dashboard") return <DashboardScreen onBack={()=>setScreen("tracker")}/>;
+  if(screen==="dashboard") return <DashboardScreen onBack={()=>setScreen("auth")}/>;
   return <TrackerScreen profile={profile} onEditProfile={()=>setScreen("setup")} onSignOut={handleSignOut} onDashboard={()=>setScreen("dashboard")} onPolePosition={()=>setScreen("pole")}/>;
 }
 
